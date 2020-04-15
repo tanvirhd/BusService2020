@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "889414791883",
+    "firebase_url": "https://busservice2020.firebaseio.com",
+    "project_id": "busservice2020",
+    "storage_bucket": "busservice2020.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:889414791883:android:d1592e6c026768af0ca14e",
+        "android_client_info": {
+          "package_name": "com.example.busservice2020"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "889414791883-24mq68cg4jipjt6rcpbthlream1hmi7f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.busservice2020",
+            "certificate_hash": "8f44bca7ab9b5d804e23eab64d03974852163f3c"
+          }
+        },
+        {
+          "client_id": "889414791883-leis6g9fr5j9fl6n3bsb21b9a04l0360.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD01KP1hKLkPAhyN1eEcrgouOpXf-N6IAo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "889414791883-leis6g9fr5j9fl6n3bsb21b9a04l0360.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
