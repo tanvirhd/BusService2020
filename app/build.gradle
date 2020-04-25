@@ -41,7 +41,12 @@ dependencies {
     implementation "androidx.recyclerview:recyclerview:1.1.0"
     implementation 'com.google.android.material:material:1.1.0'
     implementation 'de.hdodenhof:circleimageview:3.1.0'//circular image view
-    implementation 'com.github.davidpizarro:pinview:1.0.0' //pinview
+    implementation 'com.github.GoodieBag:Pinview:1.3' //pinview
+
+    //SMS Retriver API
+    implementation 'com.google.android.gms:play-services-auth:18.0.0'
+    implementation 'com.google.android.gms:play-services-auth-api-phone:17.4.0'
 
     implementation 'com.google.firebase:firebase-auth:19.3.0'
+    implementation 'io.andref:Rx.Network:1.0.1'
 }

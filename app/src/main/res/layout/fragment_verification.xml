@@ -44,7 +44,7 @@
         app:layout_constraintHorizontal_bias="0.259"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <com.dpizarro.pinview.library.PinView
+<!--    <com.dpizarro.pinview.library.PinView
         android:id="@+id/pinView"
         android:layout_width="300dp"
         android:layout_height="60dp"
@@ -59,7 +59,28 @@
         app:layout_constraintHorizontal_bias="0.243"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-         />
+         />-->
+
+    <com.goodiebag.pinview.Pinview
+        android:id="@+id/pinView"
+        android:layout_width="300dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="224dp"
+
+        app:cursorVisible="true"
+        app:forceKeyboard="true"
+        app:inputType="number"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.315"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:password="false"
+
+
+        app:pinBackground="@drawable/line"
+        app:pinHeight="30dp"
+        app:pinLength="6"
+        app:pinWidth="35dp" />
 
     <Button
         android:id="@+id/btn_resend_code"
@@ -75,6 +96,5 @@
         app:layout_constraintHorizontal_bias="0.116"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/pinView" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

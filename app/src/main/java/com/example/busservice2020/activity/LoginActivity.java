@@ -9,21 +9,21 @@ import androidx.fragment.app.FragmentTransaction;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Toast;
 
 import com.example.busservice2020.R;
 import com.example.busservice2020.databinding.ActivityLoginBinding;
-import com.example.busservice2020.fragment.Fragment_Communication;
-import com.example.busservice2020.fragment.LoginFragment;
 import com.example.busservice2020.fragment.VerificationFragment;
+import com.example.busservice2020.interfaces.F2F_Commuication;
+import com.example.busservice2020.interfaces.Fragment_Communication;
+import com.example.busservice2020.fragment.LoginFragment;
 
-public class LoginActivity extends AppCompatActivity implements Fragment_Communication {
+public class LoginActivity extends AppCompatActivity implements Fragment_Communication , F2F_Commuication {
     private static final String TAG="LoginActivity";
 
     ActivityLoginBinding binding;
     Toolbar toolbar;
 
+    VerificationFragment verificationFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,14 +36,13 @@ public class LoginActivity extends AppCompatActivity implements Fragment_Communi
         setSupportActionBar(toolbar);
 
         init_fragment();
-    }
+        verificationFragment=new VerificationFragment();
+    }//end of on Create
 
     @Override
-    public void sharePhnNumber(String fragmentTag, String phnNumber) {
-        if(fragmentTag.equals("VerificationFragment")){
-            VerificationFragment verificationFragment=new VerificationFragment();
+    public void onCodeSendResponse(String fragmentTag, String phnNumber) {
+        if(fragmentTag.equals("LoginFragment"))
             doFragmentTransaction(verificationFragment,phnNumber);
-        }
     }
 
     @Override
@@ -79,4 +78,14 @@ public class LoginActivity extends AppCompatActivity implements Fragment_Communi
         super.onBackPressed();
         Log.d(TAG, "onBackPressed: called");
     }
+
+    @Override
+    public void onAutoRetriveSMS(String code) {
+        verificationFragment.setOTP(code);
+    }
+
+    //================================================================
+
+
+
 }
