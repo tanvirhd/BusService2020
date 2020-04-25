@@ -1,6 +1,7 @@
 package com.example.busservice2020.fragment;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -8,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,12 +21,18 @@ import android.widget.Toast;
 import com.example.busservice2020.R;
 import com.example.busservice2020.activity.HomeActivity;
 import com.example.busservice2020.databinding.FragmentVerificationBinding;
+import com.example.busservice2020.interfaces.Fragment_Communication;
 import com.goodiebag.pinview.Pinview;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthProvider;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import static com.example.busservice2020.fragment.LoginFragment.mAuth;
 import static com.example.busservice2020.fragment.LoginFragment.mVerificationId;
@@ -35,7 +43,7 @@ public class VerificationFragment extends Fragment{
     private FragmentVerificationBinding fragmentVerificationBinding;
 
     private String phnNumber;
-
+    Fragment_Communication communication;
     public VerificationFragment() {
         // Required empty public constructor
     }
@@ -91,17 +99,43 @@ public class VerificationFragment extends Fragment{
 
     private void verifyVerificationCode(String otp) {
         Log.d(TAG, "verifyVerificationCode: Done");
-        PhoneAuthCredential credential = PhoneAuthProvider.getCredential(mVerificationId, otp);
+        final PhoneAuthCredential credential = PhoneAuthProvider.getCredential(mVerificationId, otp);
         mAuth.signInWithCredential(credential).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if(task.isSuccessful()){
                     hideKeyboard(getActivity());
-                    startActivity(new Intent(getActivity(), HomeActivity.class));getActivity().finish();
                     Toast.makeText(getActivity(), "Verification Complete.", Toast.LENGTH_SHORT).show();
+                    checkUserStatus(mAuth.getUid());
                 }
             }
         });
+    }
+
+    private void checkUserStatus(String uid){
+
+        DatabaseReference ref= FirebaseDatabase.getInstance().getReference("userlist").child(uid);
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.d(TAG, "@ "+dataSnapshot.getValue());
+                if(dataSnapshot.getValue()==null){
+                    getActivity().getSupportFragmentManager().popBackStack(getTag(),FragmentManager.POP_BACK_STACK_INCLUSIVE);
+                    communication.callRegFragment("CallRegFrag");
+                    Log.d(TAG, "onDataChange: New User");
+                }else{
+                    startActivity(new Intent(getActivity(), HomeActivity.class));getActivity().finish();
+                    Log.d(TAG, "onDataChange: Registered User");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.d(TAG, "onCancelled: database error"+databaseError.getMessage());
+            }
+        });
+
+        Log.d(TAG, "checkUserStatus: uid="+uid);
     }
 
     public static void hideKeyboard(Activity activity) {
@@ -111,6 +145,12 @@ public class VerificationFragment extends Fragment{
             view = new View(activity);
         }
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    }
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        communication=(Fragment_Communication)getActivity();
     }
 
     /*@Override

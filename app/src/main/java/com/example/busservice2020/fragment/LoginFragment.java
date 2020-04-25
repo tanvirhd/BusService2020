@@ -1,5 +1,6 @@
 package com.example.busservice2020.fragment;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
@@ -15,6 +16,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -31,6 +33,11 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthProvider;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.concurrent.TimeUnit;
 
@@ -40,6 +47,7 @@ import rx.functions.Action1;
 import rx.subscriptions.CompositeSubscription;
 
 import static android.content.Context.CONNECTIVITY_SERVICE;
+import static com.example.busservice2020.activity.LoginActivity.user;
 
 public class LoginFragment extends Fragment  {
     private static final String TAG="LoginFragment";
@@ -55,7 +63,6 @@ public class LoginFragment extends Fragment  {
     public PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallbacks;
     public static String mVerificationId;
     public PhoneAuthProvider.ForceResendingToken resendToken;
-    //public String code=null;
 
     public LoginFragment() {
         // Required empty public constructor
@@ -85,7 +92,9 @@ public class LoginFragment extends Fragment  {
                         Toast.makeText(getActivity(), "Invalid Number!!", Toast.LENGTH_SHORT).show();
                     }else {
                         sendVerificationCode(fragmentLoginBinding.enterPhnNumber.getText().toString());
-                        resetIn30SEC(15,fragmentLoginBinding.nextButton);
+                        //resetIn30SEC(15,fragmentLoginBinding.nextButton);
+                        hideKeyboard(getActivity());
+                        fragmentLoginBinding.nextButton.setText("Please wait...");
                         fragmentLoginBinding.nextButton.setClickable(false);
                         mCompositeSubscription.unsubscribe();
                     }
@@ -93,6 +102,15 @@ public class LoginFragment extends Fragment  {
         });
 
         return  view;
+    }
+
+    public static void hideKeyboard(Activity activity) {
+        InputMethodManager imm = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
+        View view = activity.getCurrentFocus();
+        if (view == null) {
+            view = new View(activity);
+        }
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
 
@@ -152,7 +170,7 @@ public class LoginFragment extends Fragment  {
                 Log.d(TAG, "onVerificationCompleted: Called");
 
                 if(phoneAuthCredential.getSmsCode() != null){
-                    //callingf verification fragment
+                    //calling verification fragment
                     f2fCommuication.onAutoRetriveSMS(phoneAuthCredential.getSmsCode());
                     Toast.makeText(getActivity(), "Auto-Retrival", Toast.LENGTH_SHORT).show();
                 }else {
@@ -183,6 +201,7 @@ public class LoginFragment extends Fragment  {
 
     private void sendVerificationCode(String mobile) {
         Log.d(TAG, "sendVerificationCode: Done.");
+        user.setPhnNumber("+88"+mobile);
         PhoneAuthProvider.getInstance().verifyPhoneNumber(
                 "+88" + mobile,
                 60,
@@ -198,7 +217,7 @@ public class LoginFragment extends Fragment  {
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if(task.isSuccessful()){
                     Toast.makeText(getActivity(), "Verification Complete.", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(getActivity(), HomeActivity.class));getActivity().finish(); //jump to Home Activity
+                    checkUserStatus(mAuth.getUid());
                 }
             }
         });
@@ -220,5 +239,30 @@ public class LoginFragment extends Fragment  {
                 btn.setClickable(true);
             }
         }.start();
+    }
+
+    private void checkUserStatus(String uid){
+
+        DatabaseReference ref= FirebaseDatabase.getInstance().getReference("userlist").child(uid);
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.d(TAG, "@ "+dataSnapshot.getValue());
+                if(dataSnapshot.getValue()==null){
+                    fragmentCommunication.callRegFragment("CallRegFrag");
+                    Log.d(TAG, "onDataChange: New User");
+                }else{
+                    startActivity(new Intent(getActivity(), HomeActivity.class));getActivity().finish();
+                    Log.d(TAG, "onDataChange: Registered User");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.d(TAG, "onCancelled: database error"+databaseError.getMessage());
+            }
+        });
+
+        Log.d(TAG, "checkUserStatus: uid="+uid);
     }
 }

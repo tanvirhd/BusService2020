@@ -47,6 +47,12 @@ dependencies {
     implementation 'com.google.android.gms:play-services-auth:18.0.0'
     implementation 'com.google.android.gms:play-services-auth-api-phone:17.4.0'
 
-    implementation 'com.google.firebase:firebase-auth:19.3.0'
+    //firebase
+    implementation 'com.google.firebase:firebase-database:19.3.0'
+    implementation 'com.google.firebase:firebase-auth:19.3.1'
+    implementation 'com.google.firebase:firebase-crash:16.2.1'
+    implementation 'com.google.firebase:firebase-storage:19.1.1'
+
+    //check network state
     implementation 'io.andref:Rx.Network:1.0.1'
 }
