@@ -112,6 +112,8 @@ public class VerificationFragment extends Fragment{
         });
     }
 
+
+    //ToDo check this method for reference
     private void checkUserStatus(String uid){
 
         DatabaseReference ref= FirebaseDatabase.getInstance().getReference("userlist").child(uid);
@@ -152,74 +154,5 @@ public class VerificationFragment extends Fragment{
         super.onAttach(context);
         communication=(Fragment_Communication)getActivity();
     }
-
-    /*@Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        Log.d(TAG, "onOptionsItemSelected: itemID"+item.getItemId());
-        if(item.getItemId()==android.R.id.home){
-            Log.d(TAG, "onOptionsItemSelected: pressed");
-            getActivity().onBackPressed();
-        }
-        return super.onOptionsItemSelected(item);
-    }*/
-
-    /*    private void verifyVerificationCode(String otp) {
-        Log.d(TAG, "verifyVerificationCode: Done");
-        PhoneAuthCredential credential = PhoneAuthProvider.getCredential(mVerificationId, otp);
-        signInWithPhoneAuthCredential(credential);
-    }
-
-    private void signInWithPhoneAuthCredential(PhoneAuthCredential credential) {
-        Log.d(TAG, "signInWithPhoneAuthCredential: Done.");
-          mAuth.signInWithCredential(credential).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-              @Override
-              public void onComplete(@NonNull Task<AuthResult> task) {
-                   if(task.isSuccessful()){
-                       Toast.makeText(getActivity(), "Verification Complete.", Toast.LENGTH_SHORT).show();
-                   }
-              }
-          });
-    }
-
-    private void initFireBaseCallbacks(){
-        Log.d(TAG, "initFireBaseCallbacks: Done");
-        mAuth= FirebaseAuth.getInstance();
-        mCallbacks=new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-            @Override
-            public void onVerificationCompleted(@NonNull PhoneAuthCredential phoneAuthCredential) {
-                Log.d(TAG, "onVerificationCompleted: Auto Complete");
-                Toast.makeText(getActivity(), "Verification auto-completed", Toast.LENGTH_SHORT).show();
-                  String code=phoneAuthCredential.getSmsCode();
-                  if(code!=null){
-                      fragmentVerificationBinding.pinView.setValue(code);
-                      verifyVerificationCode(code);
-                  }
-            }
-
-            @Override
-            public void onVerificationFailed(@NonNull FirebaseException e) {
-                Log.d(TAG, "onVerificationFailed: "+e.getMessage());
-            }
-
-            @Override
-            public void onCodeSent(@NonNull String s, @NonNull PhoneAuthProvider.ForceResendingToken forceResendingToken) {
-                super.onCodeSent(s, forceResendingToken);
-                fragmentVerificationBinding.phnNumber.setText("Enter Verification code sent to +88"+phnNumber);
-                mVerificationId=s;
-                resendToken=forceResendingToken;
-
-            }
-        };
-    }
-
-    private void sendVerificationCode(String mobile) {
-        Log.d(TAG, "sendVerificationCode: Done.");
-        PhoneAuthProvider.getInstance().verifyPhoneNumber(
-                "+88" + mobile,
-                60,
-                TimeUnit.SECONDS,
-                TaskExecutors.MAIN_THREAD,
-                mCallbacks);
-    }*/
 
 }

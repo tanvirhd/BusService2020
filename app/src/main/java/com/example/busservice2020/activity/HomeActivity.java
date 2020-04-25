@@ -16,6 +16,8 @@ import com.example.busservice2020.R;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
 
+
+//ToDo Add user details to nav header
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = "HomeActivity";
     private Toolbar toolbar;
