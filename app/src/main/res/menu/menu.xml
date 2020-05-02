@@ -5,9 +5,27 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_item_about"
-            android:icon="@drawable/ic_info"
-            android:title="About" />
+            android:id="@+id/admin"
+            android:icon="@drawable/user"
+            android:title="Admin Portal" />
+        <item
+            android:id="@+id/logout"
+            android:title="Log Out"
+            android:icon="@drawable/power"
+            />
     </group>
+
+    <item android:title="Extra">
+        <menu>
+            <item
+                android:id="@+id/ex_1"
+                android:icon="@drawable/ic_info"
+                android:title="Extra 1" />
+            <item
+                android:id="@+id/ex_2"
+                android:icon="@drawable/ic_info"
+                android:title="Extra 2" />
+        </menu>
+    </item>
 
 </menu>
