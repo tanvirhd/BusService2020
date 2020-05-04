@@ -29,7 +29,6 @@ import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
 
-//ToDo Add user details to nav header
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = "HomeActivity";
     private Toolbar toolbar;
@@ -71,6 +70,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         Log.d(TAG,""+firebaseUser.getUid());
         final String userid = firebaseUser.getUid();
 
+        //todo make a methode to update ui
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("userlist").child(userid);
         ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -92,8 +92,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             }
         });
 
-
         navigationView.setNavigationItemSelectedListener(this);
+
+        //===========================================tanvir=======================================================================
 
     }
 
