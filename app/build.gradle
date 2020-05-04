@@ -55,4 +55,7 @@ dependencies {
 
     //check network state
     implementation 'io.andref:Rx.Network:1.0.1'
+
+    //Picasso
+    implementation 'com.squareup.picasso:picasso:2.71828'
 }
