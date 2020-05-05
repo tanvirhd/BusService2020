@@ -32,13 +32,6 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
-        <activity
-            android:name=".activity.MapsActivity"
-            android:label="@string/title_activity_maps">
-            <!--map activity-->
-
-
-        </activity>
         <activity android:name=".trash.TempActivity">
 
             <!-- Temp Activity -->
@@ -46,6 +39,7 @@
         <activity android:name=".activity.HomeActivity">
 
             <!-- Home Activity -->
+
         </activity>
         <activity
             android:name=".activity.LoginActivity"
@@ -63,6 +57,7 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
 
         </activity>
 

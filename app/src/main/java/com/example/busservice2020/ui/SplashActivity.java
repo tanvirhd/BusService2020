@@ -10,9 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.busservice2020.activity.HomeActivity;
 import com.example.busservice2020.activity.LoginActivity;
-import com.example.busservice2020.activity.MapsActivity;
 import com.example.busservice2020.interfaces.Fragment_Communication;
-import com.example.busservice2020.model.UserModel;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -36,15 +34,14 @@ public class SplashActivity extends AppCompatActivity {
 
         Log.d(TAG, "ddd" + firebaseUser);
 
-        /*if (firebaseUser != null) {
+        if (firebaseUser != null) {
             addUser();
         } else {
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
             finish();
-        }*/
+        }
 
-        startActivity(new Intent(this, MapsActivity.class));finish();
     }
 
     //ToDo check current user status

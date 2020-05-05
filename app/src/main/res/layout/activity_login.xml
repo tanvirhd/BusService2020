@@ -8,7 +8,7 @@
     tools:context=".activity.LoginActivity">
 
     <include layout="@layout/toolbar"
-        android:id="@+id/toolbar"/>
+        android:id="@+id/home_toolbar"/>
 
     <FrameLayout
         android:layout_width="match_parent"

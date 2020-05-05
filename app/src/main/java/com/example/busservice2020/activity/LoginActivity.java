@@ -1,7 +1,6 @@
 package com.example.busservice2020.activity;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -10,9 +9,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
@@ -26,13 +23,6 @@ import com.example.busservice2020.interfaces.F2F_Commuication;
 import com.example.busservice2020.interfaces.Fragment_Communication;
 import com.example.busservice2020.fragment.LoginFragment;
 import com.example.busservice2020.model.UserModel;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-
-import java.util.List;
 
 public class LoginActivity extends AppCompatActivity implements Fragment_Communication , F2F_Commuication {
     private static final String TAG="LoginActivity";
@@ -51,7 +41,7 @@ public class LoginActivity extends AppCompatActivity implements Fragment_Communi
         binding=ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        toolbar=findViewById(R.id.toolbar);
+        toolbar=findViewById(R.id.home_toolbar);
         setSupportActionBar(toolbar);
 
         init_fragment();
