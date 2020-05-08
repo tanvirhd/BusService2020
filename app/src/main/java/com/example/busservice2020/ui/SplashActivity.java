@@ -1,12 +1,16 @@
 package com.example.busservice2020.ui;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.example.busservice2020.activity.HomeActivity;
 import com.example.busservice2020.activity.LoginActivity;
@@ -23,7 +27,11 @@ public class SplashActivity extends AppCompatActivity {
     private static final String TAG = "SplashActivity";
     FirebaseUser firebaseUser;
     FirebaseAuth firebaseAuth;
-    Fragment_Communication fragment_communication;
+
+    private static boolean LocationPermission = false;
+    private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
+    private static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 999;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -32,20 +40,24 @@ public class SplashActivity extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseUser = firebaseAuth.getCurrentUser();
 
-        Log.d(TAG, "ddd" + firebaseUser);
-
         if (firebaseUser != null) {
-            addUser();
+            checkUserStatus();
         } else {
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
             finish();
         }
 
+
+
+        //startActivity(new Intent(SplashActivity.this,HomeActivity.class));
+
+        //todo check getting permission issue
+        getLocationPermission();
+
     }
 
-    //ToDo check current user status
-    private void addUser() {
+    private void checkUserStatus() {
 //        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("userlist");
 //        UserModel user = new UserModel("", "", "", "");
 //        reference.child("root_user_id").setValue(user);
@@ -76,5 +88,46 @@ public class SplashActivity extends AppCompatActivity {
                 Log.d(TAG, "onCancelled: database error" + databaseError.getMessage());
             }
         });
+    }
+
+    private void getLocationPermission() {
+        Log.d(TAG, "getLocationPermission: getting location permissions");
+        String permissions[] = {Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION};
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(), FINE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED) {
+
+            if (ContextCompat.checkSelfPermission(this.getApplicationContext(), COARSE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED) {
+                LocationPermission = true;
+            } else {
+                ActivityCompat.requestPermissions(this, permissions,
+                        LOCATION_PERMISSION_REQUEST_CODE);
+            }
+
+        } else {
+            ActivityCompat.requestPermissions(this, permissions,
+                    LOCATION_PERMISSION_REQUEST_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        Log.d(TAG, "onRequestPermissionsResult: called");
+        LocationPermission = false;
+        switch (requestCode) {
+            case LOCATION_PERMISSION_REQUEST_CODE: {
+                if (grantResults.length > 0) {
+                    for (int i = 0; i < grantResults.length; i++) {
+                        if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                            LocationPermission = true;
+                            Log.d(TAG, "onRequestPermissionsResult: permission granted.");
+                        }
+                    }
+                    Log.d(TAG, "onRequestPermissionsResult: permission failde");
+                    LocationPermission = false;
+                }
+            }
+        }
     }
 }

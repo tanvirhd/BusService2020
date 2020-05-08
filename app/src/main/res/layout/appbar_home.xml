@@ -2,31 +2,52 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appbarlayout"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:background="@color/white">
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        app:liftOnScroll="true">
 
         <androidx.appcompat.widget.Toolbar
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:id="@+id/home_toolbar"
-            android:background="@color/white">
+            android:background="@color/white"
+            android:gravity="center_horizontal">
+
+            <LinearLayout
+                android:id="@+id/main_toolbar_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:id="@+id/toolbarTitle"
+                    android:textColor="@color/black"
+                    android:textSize="16dp"
+                    android:paddingEnd="32dp"
+                    android:textAlignment="center"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
 
         </androidx.appcompat.widget.Toolbar>
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:layout_marginTop="?attr/actionBarSize">
 
             <RelativeLayout
                 android:layout_width="24dp"
-                android:layout_height="32dp"
-                android:layout_marginStart="16dp"
+                android:layout_height="48dp"
                 android:gravity="center"
                 app:layout_constraintBottom_toTopOf="@+id/marker1"
                 app:layout_constraintEnd_toStartOf="@+id/textView4"
@@ -46,8 +67,7 @@
                 android:id="@+id/marker2"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="8dp"
                 android:src="@drawable/selected_dot"
                 app:layout_constraintEnd_toStartOf="@+id/textView4"
                 app:layout_constraintStart_toStartOf="parent"
@@ -57,20 +77,18 @@
                 android:id="@+id/marker1"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginBottom="32dp"
+                android:layout_marginBottom="8dp"
                 android:src="@drawable/marker_icon"
-                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintBottom_toBottomOf="@+id/textView3"
                 app:layout_constraintEnd_toStartOf="@+id/textView3"
                 app:layout_constraintStart_toStartOf="parent" />
 
             <TextView
                 android:id="@+id/textView4"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginStart="64dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="16dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="56dp"
+                android:layout_marginEnd="8dp"
                 android:background="@drawable/textbox_liteash"
                 android:gravity="center_vertical"
                 android:hint="Start Location"
@@ -82,24 +100,32 @@
             <TextView
                 android:id="@+id/textView3"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginStart="64dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="16dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="56dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="8dp"
                 android:background="@drawable/textbox_liteash"
                 android:gravity="center_vertical"
                 android:hint="Destination Location"
                 android:paddingLeft="10dp"
-                app:layout_constraintBottom_toBottomOf="parent"
+
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView4" />
+
+            <include
+                android:id="@+id/home_content"
+                layout="@layout/content_home"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView3"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-    </com.google.android.material.appbar.AppBarLayout>
-
-
-    <include layout="@layout/content_home"
-        android:id="@+id/home_content"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
