@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat;
 import com.example.busservice2020.activity.HomeActivity;
 import com.example.busservice2020.activity.LoginActivity;
 import com.example.busservice2020.interfaces.Fragment_Communication;
+import com.google.android.gms.location.LocationRequest;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -23,15 +24,15 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+
+//todo ask location permission
+//todo ask background location permission
+
+
 public class SplashActivity extends AppCompatActivity {
     private static final String TAG = "SplashActivity";
     FirebaseUser firebaseUser;
     FirebaseAuth firebaseAuth;
-
-    private static boolean LocationPermission = false;
-    private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
-    private static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 999;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -40,6 +41,7 @@ public class SplashActivity extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseUser = firebaseAuth.getCurrentUser();
 
+
         if (firebaseUser != null) {
             checkUserStatus();
         } else {
@@ -47,13 +49,6 @@ public class SplashActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         }
-
-
-
-        //startActivity(new Intent(SplashActivity.this,HomeActivity.class));
-
-        //todo check getting permission issue
-        getLocationPermission();
 
     }
 
@@ -89,6 +84,13 @@ public class SplashActivity extends AppCompatActivity {
             }
         });
     }
+
+    //do no follow these methods. they ar buggy
+    /*
+    private static boolean LocationPermission = false;
+    private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
+    private static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 999;
 
     private void getLocationPermission() {
         Log.d(TAG, "getLocationPermission: getting location permissions");
@@ -129,5 +131,5 @@ public class SplashActivity extends AppCompatActivity {
                 }
             }
         }
-    }
+    }*/
 }

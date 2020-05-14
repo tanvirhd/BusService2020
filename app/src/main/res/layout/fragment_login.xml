@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
 xmlns:app="http://schemas.android.com/apk/res-auto"
 xmlns:tools="http://schemas.android.com/tools"
 android:layout_width="match_parent"
@@ -60,7 +61,7 @@ tools:context=".fragment.LoginFragment">
         android:text=" +88 "
         android:textSize="20dp"
         android:gravity="center"
-        android:background="@drawable/rightflast_textbox"/>
+        android:background="@drawable/textbox_rightflast"/>
 
     <EditText
         android:id="@+id/enter_phn_number"
@@ -68,7 +69,7 @@ tools:context=".fragment.LoginFragment">
         android:layout_height="50dp"
         android:layout_weight="8"
         android:inputType="number"
-        android:background="@drawable/leftflat_textbox"
+        android:background="@drawable/textbox_leftflat"
         android:textSize="20dp"
         android:layout_marginLeft="4dp"
         android:hint="017XX-XXXXXX"

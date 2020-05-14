@@ -69,7 +69,7 @@ public class VerificationFragment extends Fragment{
         ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayShowHomeEnabled(false);
         ((AppCompatActivity) getActivity()).getSupportActionBar().setHomeButtonEnabled(true);
         ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        ((AppCompatActivity) getActivity()).getSupportActionBar().setHomeAsUpIndicator(R.drawable.back_arrow);
+        ((AppCompatActivity) getActivity()).getSupportActionBar().setHomeAsUpIndicator(R.drawable.arrow_back);
 
 
         fragmentVerificationBinding.phnNumber.setText("Enter verification code sent to +88"+phnNumber);
@@ -113,7 +113,6 @@ public class VerificationFragment extends Fragment{
     }
 
 
-    //ToDo check this method for reference
     private void checkUserStatus(String uid){
 
         DatabaseReference ref= FirebaseDatabase.getInstance().getReference("userlist").child(uid);
