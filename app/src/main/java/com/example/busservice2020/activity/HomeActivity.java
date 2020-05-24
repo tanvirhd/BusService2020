@@ -10,7 +10,9 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Looper;
@@ -29,12 +31,16 @@ import com.example.busservice2020.model.DirectionResponse;
 import com.example.busservice2020.model.OverviewPolyline;
 import com.example.busservice2020.model.UserModel;
 import com.example.busservice2020.viewmodel.ViewmodelDirectionApi;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -45,7 +51,9 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.PlacesClient;
@@ -73,6 +81,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final String TAG = "HomeActivity";
     private static final int STARTLOCATION_REQUEST_CODE = 0;
     private static final int DESTINATIONLOCATION_REQUEST_CODE = 1;
+    private static final int REQUEST_CHECK_SETTINGS = 666;
 
     private ActivityHomeBinding binding;
 
@@ -132,7 +141,6 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseUser = firebaseAuth.getCurrentUser();
 
-
         viewmodelDirectionApi = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(ViewmodelDirectionApi.class);
         //============================================initialization ends here===============================================
 
@@ -152,6 +160,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
+
+        locationsetting(HomeActivity.this);
         //======================================================= maps =======================================================
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -173,6 +183,42 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     }//end of onCreate
+
+    private void locationsetting(Context context) {
+        final LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setInterval(10000);
+        locationRequest.setFastestInterval(5000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
+        builder.setAlwaysShow(true);
+        SettingsClient client = LocationServices.getSettingsClient(this);
+        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
+        task.addOnSuccessListener(this, new OnSuccessListener<LocationSettingsResponse>() {
+            @Override
+            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                Log.d(TAG, "loction on");
+            }
+        });
+        task.addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                if (e instanceof ResolvableApiException) {
+                    try {
+                        Log.d(TAG, "try to loction on ");
+                        ResolvableApiException resolvable = (ResolvableApiException) e;
+                        resolvable.startResolutionForResult(HomeActivity.this,
+                                REQUEST_CHECK_SETTINGS);
+
+                    } catch (IntentSender.SendIntentException sendEx) {
+                        Log.d(TAG, "try to loction onnnn ");
+                    }
+
+                }
+            }
+        });
+
+    }
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -197,8 +243,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             @Override
             public void onMarkerDragEnd(Marker marker) {
-                 startMarker.setPosition(marker.getPosition());
-                Log.d(TAG, "onMarkerDragEnd: "+startMarker.getId());
+                startMarker.setPosition(marker.getPosition());
+                Log.d(TAG, "onMarkerDragEnd: " + startMarker.getId());
             }
         });
     }
@@ -270,7 +316,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.d(TAG, "getDirectionResponse: called");
         if (origin != null && destination != null) {
             Log.d(TAG, "getDirectionResponse: inside if");
-            try{
+            try {
                 Map<String, String> mapQuery = new HashMap<>();
                 mapQuery.put("key", "AIzaSyCdP8QSuapjIn5DZEfWXG5EH6EIiYb6uuY");
                 mapQuery.put("origin", origin.getPosition().latitude + "," + origin.getPosition().longitude);
@@ -280,15 +326,15 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 viewmodelDirectionApi.getDirectionResponse(mapQuery).observe(this, new Observer<DirectionResponse>() {
                     @Override
                     public void onChanged(DirectionResponse directionResponse) {
-                        Log.d(TAG, "onChanged: direction response status: "+directionResponse.getStatus());
-                        if(directionResponse.getStatus().equals("OK")){
+                        Log.d(TAG, "onChanged: direction response status: " + directionResponse.getStatus());
+                        if (directionResponse.getStatus().equals("OK")) {
                             OverviewPolyline overviewPolyline = directionResponse.getRoutes().get(0).getOverviewPolyline();
                             drawPolyLine(overviewPolyline);
                         }
                     }
                 });
-            }catch (Exception E){
-                Log.d(TAG, "getDirectionResponse: error"+E.getMessage());
+            } catch (Exception E) {
+                Log.d(TAG, "getDirectionResponse: error" + E.getMessage());
             }
         } else {
             Log.d(TAG, "getDirectionResponse: something wet wrong");
@@ -323,20 +369,20 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                     place = Autocomplete.getPlaceFromIntent(data);
                     binding.homeAppbar.searchStartLocation.setText(place.getName());
 
-                    if(startMarker==null){
+                    if (startMarker == null) {
                         startMarker = mMap.addMarker(new MarkerOptions()
                                 .position(place.getLatLng())
                                 .draggable(true)
                                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
                                 .title(place.getId()));
-                    }else {
+                    } else {
                         startMarker.setPosition(place.getLatLng());
                     }
 
 
                     moveCamera(place.getLatLng(), "onActivityResult");
 
-                    Log.i(TAG, "Place: " + place.getName() + ", " + place.getId()+" markerid="+startMarker.getId());
+                    Log.i(TAG, "Place: " + place.getName() + ", " + place.getId() + " markerid=" + startMarker.getId());
                     break;
                 case AutocompleteActivity.RESULT_ERROR:
                     // TODO: Handle the error.
@@ -353,12 +399,12 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                     place = Autocomplete.getPlaceFromIntent(data);
                     binding.homeAppbar.searchDestinationLocation.setText(place.getName());
 
-                    if(destinationMArker==null){
+                    if (destinationMArker == null) {
                         destinationMArker = mMap.addMarker(new MarkerOptions()
                                 .position(place.getLatLng())
                                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
                                 .title(place.getId()));
-                    }else {
+                    } else {
                         destinationMArker.setPosition(place.getLatLng());
                     }
 
@@ -378,6 +424,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                     break;
             }
 
+        } else if (requestCode == REQUEST_CHECK_SETTINGS) {
+            Log.d(TAG, "bal");
 
         }
     }
@@ -425,7 +473,10 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void moveCamera(Location location, String caller) {
         Log.d(TAG, "moveCamera: called by " + caller);
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), DEFAULT_ZOOM));
+        if (location != null) {
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), DEFAULT_ZOOM));
+
+        }
     }
 
     public void moveCamera(LatLng latLng, String caller) {
