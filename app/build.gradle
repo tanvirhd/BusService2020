@@ -79,4 +79,7 @@ dependencies {
 
     //Maps SDK for Android Utility Library (poly decoding/encoding)
     implementation 'com.google.maps.android:android-maps-utils:1.2.1'
+
+    //to request runtime permission
+    implementation 'com.karumi:dexter:6.0.0'
 }
