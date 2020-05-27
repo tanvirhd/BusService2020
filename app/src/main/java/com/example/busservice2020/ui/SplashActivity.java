@@ -9,35 +9,23 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import com.example.busservice2020.activity.HomeActivity;
 import com.example.busservice2020.activity.LoginActivity;
-import com.example.busservice2020.interfaces.Fragment_Communication;
-import com.google.android.gms.location.LocationRequest;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-import com.karumi.dexter.Dexter;
-import com.karumi.dexter.MultiplePermissionsReport;
-import com.karumi.dexter.PermissionToken;
-import com.karumi.dexter.listener.PermissionRequest;
-import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
+import com.google.firebase.database.ValueEventListener;;
 
-import java.util.List;
-
-
-//todo ask location permission
 //todo ask background location permission
 
 
 public class SplashActivity extends AppCompatActivity {
     private static final String TAG = "SplashActivity";
+    private static final int FINE_LOCATION_REQUEST_CODE=11;
     FirebaseUser firebaseUser;
     FirebaseAuth firebaseAuth;
 
@@ -49,16 +37,17 @@ public class SplashActivity extends AppCompatActivity {
         firebaseUser = firebaseAuth.getCurrentUser();
 
 
-        if (firebaseUser != null) {
-            checkUserStatus();
-        } else {
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
-            finish();
+        if(requestLocationPermission()){
+            if (firebaseUser != null) {
+                checkUserStatus();
+            } else {
+                Intent intent = new Intent(this, LoginActivity.class);
+                startActivity(intent);
+                finish();
+            }
         }
 
-
-        Dexter.withActivity(this)
+        /*Dexter.withActivity(this)
                 .withPermissions(
                         Manifest.permission.ACCESS_BACKGROUND_LOCATION,
                         Manifest.permission.ACCESS_FINE_LOCATION)
@@ -81,14 +70,14 @@ public class SplashActivity extends AppCompatActivity {
                         token.continuePermissionRequest();
                     }
 
-                }).check();
+                }).check();*/
 
     }
 
     private void checkUserStatus() {
-//        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("userlist");
-//        UserModel user = new UserModel("", "", "", "");
-//        reference.child("root_user_id").setValue(user);
+        /*DatabaseReference reference = FirebaseDatabase.getInstance().getReference("userlist");
+        UserModel user = new UserModel("", "", "", "");
+        reference.child("root_user_id").setValue(user);*/
         String userid = firebaseUser.getUid();
         Log.d(TAG, "userid:" + userid);
 
@@ -116,6 +105,36 @@ public class SplashActivity extends AppCompatActivity {
                 Log.d(TAG, "onCancelled: database error" + databaseError.getMessage());
             }
         });
+    }
+
+    private boolean  requestLocationPermission(){
+        if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)== PackageManager.PERMISSION_GRANTED){
+            return true;
+        }else{
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},FINE_LOCATION_REQUEST_CODE);
+            return false;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if(requestCode==FINE_LOCATION_REQUEST_CODE){
+            if(grantResults[0]==PackageManager.PERMISSION_GRANTED){
+                Log.d(TAG, "onRequestPermissionsResult: permission granted.");
+                if (firebaseUser != null) {
+                    checkUserStatus();
+                } else {
+                    Intent intent = new Intent(this, LoginActivity.class);
+                    startActivity(intent);
+                    finish();
+                }
+            }else {
+                Log.d(TAG, "onRequestPermissionsResult: permission denied.");
+                finish();
+            }
+        }else{
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
     }
 
     //do no follow these methods. they ar buggy

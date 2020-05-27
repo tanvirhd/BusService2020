@@ -15,6 +15,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
@@ -31,6 +32,10 @@ import com.example.busservice2020.model.DirectionResponse;
 import com.example.busservice2020.model.OverviewPolyline;
 import com.example.busservice2020.model.UserModel;
 import com.example.busservice2020.viewmodel.ViewmodelDirectionApi;
+import com.firebase.geofire.GeoFire;
+import com.firebase.geofire.GeoLocation;
+import com.firebase.geofire.GeoQuery;
+import com.firebase.geofire.GeoQueryEventListener;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -81,7 +86,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final String TAG = "HomeActivity";
     private static final int STARTLOCATION_REQUEST_CODE = 0;
     private static final int DESTINATIONLOCATION_REQUEST_CODE = 1;
-    private static final int REQUEST_CHECK_SETTINGS = 666;
+    private static final int LOCATION_SETTINGS_REQUEST_CODE = 666;
 
     private ActivityHomeBinding binding;
 
@@ -99,6 +104,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleMap mMap;
     private static final float DEFAULT_ZOOM = 17f;
     private FusedLocationProviderClient fusedLocationClient;
+    private LocationRequest locationRequest;
     private Location mLastLocation;
     private LocationCallback locationCallback;
 
@@ -106,6 +112,12 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Place place;
     private Marker startMarker, destinationMArker;
     private List<LatLng> polylineLatLngList;
+
+    private Marker bus01, bus02;
+    HashMap<String, GeoLocation> busList = new HashMap<>();
+    HashMap<String, Marker> markerList = new HashMap<>();
+
+    private Handler mainHandler = new Handler();
 
 
     ViewmodelDirectionApi viewmodelDirectionApi;
@@ -161,13 +173,13 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
 
-        locationsetting(HomeActivity.this);
+        checklocationsetting(HomeActivity.this);
         //======================================================= maps =======================================================
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-        getLastLocation(fusedLocationClient);
+        //fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        //createLocationRequest();
 
         locationCallback = new LocationCallback() {
             @Override
@@ -177,48 +189,16 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 for (Location location : locationResult.getLocations()) {
                     //moveCamera(location,"locationcallback onLocationResult");
+                    getNearbyBuses(location);
                 }
             }
         };
 
 
+        //Teliver.startTracking(new TrackingBuilder(new MarkerOption("bus01")).build());
+
+
     }//end of onCreate
-
-    private void locationsetting(Context context) {
-        final LocationRequest locationRequest = LocationRequest.create();
-        locationRequest.setInterval(10000);
-        locationRequest.setFastestInterval(5000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
-        builder.setAlwaysShow(true);
-        SettingsClient client = LocationServices.getSettingsClient(this);
-        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
-        task.addOnSuccessListener(this, new OnSuccessListener<LocationSettingsResponse>() {
-            @Override
-            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
-                Log.d(TAG, "loction on");
-            }
-        });
-        task.addOnFailureListener(this, new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                if (e instanceof ResolvableApiException) {
-                    try {
-                        Log.d(TAG, "try to loction on ");
-                        ResolvableApiException resolvable = (ResolvableApiException) e;
-                        resolvable.startResolutionForResult(HomeActivity.this,
-                                REQUEST_CHECK_SETTINGS);
-
-                    } catch (IntentSender.SendIntentException sendEx) {
-                        Log.d(TAG, "try to loction onnnn ");
-                    }
-
-                }
-            }
-        });
-
-    }
-
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -228,7 +208,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setMyLocationEnabled(true);
         mMap.moveCamera(CameraUpdateFactory.zoomTo(DEFAULT_ZOOM));
         mMap.getUiSettings().setMapToolbarEnabled(false);
-        mMap.getUiSettings().setMyLocationButtonEnabled(false);
+        mMap.getUiSettings().setMyLocationButtonEnabled(true);
 
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
@@ -249,29 +229,299 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case STARTLOCATION_REQUEST_CODE:
+                switch (resultCode) {
+                    case RESULT_OK:
+                        place = Autocomplete.getPlaceFromIntent(data);
+                        binding.homeAppbar.searchStartLocation.setText(place.getName());
+
+                        if (startMarker == null) {
+                            startMarker = mMap.addMarker(new MarkerOptions()
+                                    .position(place.getLatLng())
+                                    .draggable(true)
+                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
+                                    .title(place.getId()));
+                        } else {
+                            startMarker.setPosition(place.getLatLng());
+                        }
+
+
+                        moveCamera(place.getLatLng(), "onActivityResult");
+
+                        Log.i(TAG, "Place: " + place.getName() + ", " + place.getId() + " markerid=" + startMarker.getId());
+                        break;
+                    case AutocompleteActivity.RESULT_ERROR:
+                        // TODO: Handle the error.
+                        Status status = Autocomplete.getStatusFromIntent(data);
+                        Log.d(TAG, "onActivityResult: " + status.getStatusMessage());
+                        break;
+                    case RESULT_CANCELED:
+                        Log.d(TAG, "onActivityResult: user cancled.");
+                        break;
+                }
+                break;
+            case DESTINATIONLOCATION_REQUEST_CODE:
+                switch (resultCode) {
+                    case RESULT_OK:
+                        place = Autocomplete.getPlaceFromIntent(data);
+                        binding.homeAppbar.searchDestinationLocation.setText(place.getName());
+
+                        if (destinationMArker == null) {
+                            destinationMArker = mMap.addMarker(new MarkerOptions()
+                                    .position(place.getLatLng())
+                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
+                                    .title(place.getId()));
+                        } else {
+                            destinationMArker.setPosition(place.getLatLng());
+                        }
+
+                        moveCamera(place.getLatLng(), "onActivityResult");
+
+                        getDirectionResponse(startMarker, destinationMArker);
+
+                        Log.i(TAG, "Place: " + place.getId() + ", " + place.getLatLng());
+                        break;
+                    case AutocompleteActivity.RESULT_ERROR:
+                        // TODO: Handle the error.
+                        Status status = Autocomplete.getStatusFromIntent(data);
+                        Log.d(TAG, "onActivityResult: " + status.getStatusMessage());
+                        break;
+                    case RESULT_CANCELED:
+                        Log.d(TAG, "onActivityResult: user cancled.");
+                        break;
+                }
+
+                break;
+            case LOCATION_SETTINGS_REQUEST_CODE:
+                Log.d(TAG, "onActivityResult: case:LOCATION_SETTINGS_REQUEST_CODE");
+                if(resultCode==RESULT_OK){
+                    getLastLocation(fusedLocationClient);
+                }
+                Log.d(TAG, "onActivityResult: result code:"+resultCode);
+                break;
+        }
+    }
+
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.admin:
+                Toast.makeText(this, "navigation admin item slelected", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.logout:
+                firebaseAuth.signOut();
+                startActivity(new Intent(this,LoginActivity.class));finish();
+                Toast.makeText(this, "navigation  logout item slelected", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.ex_1:
+                Toast.makeText(this, "navigation Extra  item slelected", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.ex_2:
+                Toast.makeText(this, "navigation second Extra item slelected", Toast.LENGTH_SHORT).show();
+                break;
+        }
+
+        drawerLayout.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+
+
+    private void getNearbyBuses(Location location) {
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("availableBuses");
+        GeoFire geoFire = new GeoFire(reference);
+
+        //todo remove geoQuery listener when done.
+        GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(location.getLatitude(), location.getLongitude()), 2);
+
+        geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+            @Override
+            public void onKeyEntered(String key, GeoLocation location) {
+                Log.d(TAG, "onKeyEntered: called");
+                busList.put(key, location);
+            }
+
+            @Override
+            public void onKeyExited(String key) {
+
+            }
+
+            @Override
+            public void onKeyMoved(String key, GeoLocation location) {
+
+            }
+
+            @Override
+            public void onGeoQueryReady() {
+                Log.d(TAG, "onGeoQueryReady: called. And busList size = " + busList.size());
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        //putMarker(busList);
+                        updateMarkerList(busList);
+                        busList.clear();
+                    }
+                });
+            }
+
+            @Override
+            public void onGeoQueryError(DatabaseError error) {
+                Log.d(TAG, "onGeoQueryError: " + error.getMessage());
+            }
+        });
+
+    }
+
+    private void updateMarkerList(HashMap<String, GeoLocation> buslist) {
+        Log.d(TAG, "updateMarkerList: called with buslist of size:" + buslist.size() + " And markerlist size:" + markerList.size());
+
+        if (!markerList.isEmpty()) { // if there is no marker then no need to iterate otherwise update marker list
+            for (Map.Entry me : markerList.entrySet()) {
+                if (buslist.isEmpty()) {
+                    Log.d(TAG, "updateMarkerList: (if) marker removed for key=" + me.getKey().toString());
+                    markerList.get(me.getKey()).remove();
+                    markerList.remove(me.getKey());
+                } else {
+                    if (!buslist.containsKey(me.getKey())) {
+                        Log.d(TAG, "updateMarkerList: (else) marker removed for key=" + me.getKey().toString());
+                        markerList.get(me.getKey()).remove();
+                        markerList.remove(me.getKey());
+                    }
+                }
+            }
+        }
+
+        if (!buslist.isEmpty()) {
+            for (Map.Entry me : buslist.entrySet()) {
+                Log.d(TAG, "updateMarkerList: inside loop. key=" + me.getKey().toString());
+                updateMarkerLocation(me.getKey().toString(), (GeoLocation) me.getValue());
+            }
+            Log.d(TAG, "updateMarkerList: loop finished.");
+        }
+    }
+
+    private void updateMarkerLocation(String key, GeoLocation location) {
+        Log.d(TAG, "updateMarkerLocation:called for marker:" + key);
+        Log.d(TAG, "updateMarkerLocation: marketlist =>" + markerList);
+
+        if (!markerList.containsKey(key)) {
+            Log.d(TAG, "updateMarkerLocation: adding marker:" + key);
+            Marker marker = mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(location.latitude, location.longitude))
+                    .draggable(true)
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
+                    .title(key));
+            markerList.put(key, marker);
+        } else {
+            Log.d(TAG, "updateMarkerLocation: repositioning marker:" + key);
+            markerList.get(key).setPosition(new LatLng(location.latitude, location.longitude));
+        }
+
+
+    }
+
+    private void putMarker(HashMap<String, GeoLocation> list) {
+
+        for (Map.Entry mp : list.entrySet()) {
+            switch (mp.getKey().toString()) {
+                case "bus01":
+                    GeoLocation location = list.get("bus01");
+                    if (bus01 == null) {
+                        Log.d(TAG, "putMarker: bus01 added");
+                        bus01 = mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(location.latitude, location.longitude))
+                                .draggable(true)
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
+                                .title("buo01"));
+                    } else {
+                        Log.d(TAG, "putMarker: bus01 location updated");
+                        bus01.setPosition(new LatLng(location.latitude, location.longitude));
+                    }
+                    break;
+                case "bus02":
+                    GeoLocation location1 = list.get("bus02");
+                    if (bus02 == null) {
+                        Log.d(TAG, "putMarker: bus01 added");
+                        bus02 = mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(location1.latitude, location1.longitude))
+                                .draggable(true)
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
+                                .title("buo01"));
+                    } else {
+                        Log.d(TAG, "putMarker: bus01 location updated");
+                        bus02.setPosition(new LatLng(location1.latitude, location1.longitude));
+                    }
+                    break;
+            }
+        }
+
+
+    }
+
     private void getLastLocation(FusedLocationProviderClient flpc) {
         Log.d(TAG, "getLastLocation: called");
         flpc.getLastLocation()
                 .addOnSuccessListener(this, new OnSuccessListener<Location>() {
                     @Override
                     public void onSuccess(Location location) {
-                        mLastLocation = location;
-                        moveCamera(mLastLocation, "getLastLocation");
-                        startLocationUpdates(createLocationRequest());
-                        if (location != null) {
+                        if (location == null) {
                             //todo handle location object when it is null
+                            Log.d(TAG, "onSuccess: location is null");
+                        }else {
+                            mLastLocation = location;
+                            moveCamera(location, "getLastLocation");
+                            startLocationUpdates(locationRequest);
                         }
                     }
-                });
+                })
+        .addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d(TAG, "onFailure: error="+e.getMessage());
+            }
+        });
     }
 
-    private LocationRequest createLocationRequest() {
+    private void createLocationRequest() {
         Log.d(TAG, "createLocationRequest: called");
-        LocationRequest locationRequest = LocationRequest.create();
+        locationRequest = LocationRequest.create();
         locationRequest.setInterval(10000);
         locationRequest.setFastestInterval(5000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        return locationRequest;
+
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
+        builder.setAlwaysShow(true);
+        SettingsClient client = LocationServices.getSettingsClient(this);
+
+
+        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
+        task.addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d(TAG, "onFailure: called");
+                if (e instanceof ResolvableApiException) {
+                    try {
+                        ResolvableApiException resolvable = (ResolvableApiException) e;
+                        resolvable.startResolutionForResult(HomeActivity.this, LOCATION_SETTINGS_REQUEST_CODE);
+                    } catch (IntentSender.SendIntentException sendEx) {
+                        // Ignore the error
+                    }
+
+                }
+            }
+        });
+
+        task.addOnSuccessListener(this, new OnSuccessListener<LocationSettingsResponse>() {
+            @Override
+            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                Log.d(TAG, "onSuccess: called");
+                getLastLocation(fusedLocationClient);
+            }
+        });
     }
 
     private void startLocationUpdates(LocationRequest locationRequest) {
@@ -360,97 +610,6 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == STARTLOCATION_REQUEST_CODE) {
-            switch (resultCode) {
-                case RESULT_OK:
-                    place = Autocomplete.getPlaceFromIntent(data);
-                    binding.homeAppbar.searchStartLocation.setText(place.getName());
-
-                    if (startMarker == null) {
-                        startMarker = mMap.addMarker(new MarkerOptions()
-                                .position(place.getLatLng())
-                                .draggable(true)
-                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
-                                .title(place.getId()));
-                    } else {
-                        startMarker.setPosition(place.getLatLng());
-                    }
-
-
-                    moveCamera(place.getLatLng(), "onActivityResult");
-
-                    Log.i(TAG, "Place: " + place.getName() + ", " + place.getId() + " markerid=" + startMarker.getId());
-                    break;
-                case AutocompleteActivity.RESULT_ERROR:
-                    // TODO: Handle the error.
-                    Status status = Autocomplete.getStatusFromIntent(data);
-                    Log.d(TAG, "onActivityResult: " + status.getStatusMessage());
-                    break;
-                case RESULT_CANCELED:
-                    Log.d(TAG, "onActivityResult: user cancled.");
-                    break;
-            }
-        } else if (requestCode == DESTINATIONLOCATION_REQUEST_CODE) {
-            switch (resultCode) {
-                case RESULT_OK:
-                    place = Autocomplete.getPlaceFromIntent(data);
-                    binding.homeAppbar.searchDestinationLocation.setText(place.getName());
-
-                    if (destinationMArker == null) {
-                        destinationMArker = mMap.addMarker(new MarkerOptions()
-                                .position(place.getLatLng())
-                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
-                                .title(place.getId()));
-                    } else {
-                        destinationMArker.setPosition(place.getLatLng());
-                    }
-
-                    moveCamera(place.getLatLng(), "onActivityResult");
-
-                    getDirectionResponse(startMarker, destinationMArker);
-
-                    Log.i(TAG, "Place: " + place.getId() + ", " + place.getLatLng());
-                    break;
-                case AutocompleteActivity.RESULT_ERROR:
-                    // TODO: Handle the error.
-                    Status status = Autocomplete.getStatusFromIntent(data);
-                    Log.d(TAG, "onActivityResult: " + status.getStatusMessage());
-                    break;
-                case RESULT_CANCELED:
-                    Log.d(TAG, "onActivityResult: user cancled.");
-                    break;
-            }
-
-        } else if (requestCode == REQUEST_CHECK_SETTINGS) {
-            Log.d(TAG, "bal");
-
-        }
-    }
-
-    @Override
-    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.admin:
-                Toast.makeText(this, "navigation admin item slelected", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.logout:
-                Toast.makeText(this, "navigation  logout item slelected", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.ex_1:
-                Toast.makeText(this, "navigation Extra  item slelected", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.ex_2:
-                Toast.makeText(this, "navigation second Extra item slelected", Toast.LENGTH_SHORT).show();
-                break;
-        }
-
-        drawerLayout.closeDrawer(GravityCompat.START);
-        return true;
-    }
-
     private void updateNavHeader(final String userid) {
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("userlist").child(userid);
         ref.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -473,16 +632,21 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void moveCamera(Location location, String caller) {
         Log.d(TAG, "moveCamera: called by " + caller);
-        if (location != null) {
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), DEFAULT_ZOOM));
-
-        }
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), DEFAULT_ZOOM));
     }
 
     public void moveCamera(LatLng latLng, String caller) {
         Log.d(TAG, "moveCamera: called by " + caller);
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, DEFAULT_ZOOM));
     }
+
+    private void removeGeoQueryListener(GeoQuery geoQuery) {
+        geoQuery.removeAllListeners();
+    }
+
+    private void checklocationsetting(Context context) {
+    }
+
 
 
 }
