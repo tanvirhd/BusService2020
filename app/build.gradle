@@ -87,7 +87,7 @@ dependencies {
     implementation 'com.karumi:dexter:6.0.0'
 
     //live tracking
-    implementation 'com.firebase:geofire-java:3.0.0'
+    implementation 'com.firebase:geofire-android:3.0.0'
     //Teliver live tracking service provider
     implementation 'com.teliver.sdk:TeliverSdk:2.0.36'
 }

@@ -97,7 +97,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final float DEFAULT_ZOOM = 17f;
     private FusedLocationProviderClient fusedLocationClient;
     private LocationRequest locationRequest;
-    private Location mLastLocation;
+    Location mLastLocation;
     private LocationCallback locationCallback;
 
     private PlacesClient placesClient;
@@ -168,6 +168,11 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        Thread GetLastLocationThread=new Thread(new GetLocationRunable(fusedLocationClient));
+        GetLastLocationThread.start();
+
+
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
@@ -195,10 +200,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setMyLocationEnabled(true);
         mMap.moveCamera(CameraUpdateFactory.zoomTo(DEFAULT_ZOOM));
         mMap.getUiSettings().setMapToolbarEnabled(false);
-        mMap.getUiSettings().setMyLocationButtonEnabled(false);
+        mMap.getUiSettings().setMyLocationButtonEnabled(true);
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-        getLastLocation(fusedLocationClient);
 
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
@@ -413,6 +416,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                     public void onSuccess(Location location) {
                         if (location == null) {
                             //todo handle location object when it is null
+                            Log.d(TAG, "onSuccess: location is null");
                         } else {
                             mLastLocation = location;
                             moveCamera(location, "getLastLocation");
@@ -598,6 +602,52 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
 
+    }
+
+    class GetLocationRunable implements Runnable{
+        FusedLocationProviderClient fusedLocationProviderClient;
+        public GetLocationRunable(FusedLocationProviderClient fusedLocationProviderClient) {
+            this.fusedLocationProviderClient=fusedLocationProviderClient;
+        }
+
+        @Override
+        public void run() {
+            getLastLocation(fusedLocationProviderClient);
+        }
+
+        private void getLastLocation(FusedLocationProviderClient flpc) {
+            Log.d(TAG, "getLastLocation: called");
+            flpc.getLastLocation()
+                    .addOnSuccessListener( new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(final Location location) {
+                            if (location == null) {
+                                //todo handle location object when it is null
+                                Log.d(TAG, "onSuccess: location is null");
+                                getLastLocation(fusedLocationClient);
+                            } else {
+                                mainHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                       mLastLocation=location;
+                                        moveCamera(location, "getLastLocation");
+
+                                        binding.homeAppbar.marker2.setImageResource(R.drawable.dot_selected_blue);
+                                        binding.homeAppbar.searchStartLocation.setText("Your Location");
+
+                                        startLocationUpdates(createLocationRequest());
+                                    }
+                                });
+                            }
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.d(TAG, "onFailure: error=" + e.getMessage());
+                        }
+                    });
+        }
     }
 
 }//the End
