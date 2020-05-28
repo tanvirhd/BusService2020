@@ -1,11 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:layout_marginTop="?attr/actionBarSize">
+
+    <!--<RelativeLayout
+        android:id="@+id/warning_layout"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/red"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/warningtext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:padding="16dp"
+            android:text="To find your pickup location automatically, turn on location services"/>
+
+        <TextView
+            android:id="@+id/turn_on_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Turn on Location"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:textSize="12dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="8dp"
+            android:layout_below="@+id/warningtext" />
+
+    </RelativeLayout>--> <!--Warning layout-->
 
     <fragment
         android:id="@+id/map"
@@ -15,6 +48,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/warning_layout" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

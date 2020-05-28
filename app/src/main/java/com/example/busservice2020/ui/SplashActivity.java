@@ -1,17 +1,29 @@
 package com.example.busservice2020.ui;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.busservice2020.activity.HomeActivity;
 import com.example.busservice2020.activity.LoginActivity;
+import com.google.android.gms.common.api.ResolvableApiException;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -21,11 +33,12 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;;
 
 //todo ask background location permission
-
+//todo current user issue needs to be fixed
 
 public class SplashActivity extends AppCompatActivity {
     private static final String TAG = "SplashActivity";
     private static final int FINE_LOCATION_REQUEST_CODE=11;
+    private static final int LOCATION_SETTINGS_REQUEST_CODE=22;
     FirebaseUser firebaseUser;
     FirebaseAuth firebaseAuth;
 
@@ -38,13 +51,7 @@ public class SplashActivity extends AppCompatActivity {
 
 
         if(requestLocationPermission()){
-            if (firebaseUser != null) {
-                checkUserStatus();
-            } else {
-                Intent intent = new Intent(this, LoginActivity.class);
-                startActivity(intent);
-                finish();
-            }
+            locationSettingOption();
         }
 
         /*Dexter.withActivity(this)
@@ -121,19 +128,98 @@ public class SplashActivity extends AppCompatActivity {
         if(requestCode==FINE_LOCATION_REQUEST_CODE){
             if(grantResults[0]==PackageManager.PERMISSION_GRANTED){
                 Log.d(TAG, "onRequestPermissionsResult: permission granted.");
-                if (firebaseUser != null) {
-                    checkUserStatus();
-                } else {
-                    Intent intent = new Intent(this, LoginActivity.class);
-                    startActivity(intent);
-                    finish();
-                }
+                locationSettingOption();
             }else {
                 Log.d(TAG, "onRequestPermissionsResult: permission denied.");
                 finish();
             }
         }else{
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+    private void locationSettingOption() {
+        final LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setInterval(10000);
+        locationRequest.setFastestInterval(5000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
+        builder.setAlwaysShow(true);
+        SettingsClient client = LocationServices.getSettingsClient(this);
+        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
+        task.addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                if (e instanceof ResolvableApiException) {
+                    try {
+                        Log.d(TAG, "try to loction on ");
+                        ResolvableApiException resolvable = (ResolvableApiException) e;
+                        resolvable.startResolutionForResult(SplashActivity.this,
+                                LOCATION_SETTINGS_REQUEST_CODE);
+                    } catch (IntentSender.SendIntentException sendEx) {
+                        Log.d(TAG, "try to loction onnnn ");
+                    }
+                }
+            }
+        });
+
+        task.addOnSuccessListener(this, new OnSuccessListener<LocationSettingsResponse>() {
+            @Override
+            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                Log.d(TAG, "onSuccess: location is on.");
+
+                if (firebaseUser != null) {
+                    checkUserStatus();
+                } else {
+                    Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
+                    startActivity(intent);
+                    finish();
+                }
+
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+
+        if(requestCode==LOCATION_SETTINGS_REQUEST_CODE){
+            switch (resultCode){
+                case RESULT_OK:
+                    Log.d(TAG, "onActivityResult: RESULT_OK");
+
+                    if (firebaseUser != null) {
+                        checkUserStatus();
+                    } else {
+                        Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
+                        startActivity(intent);
+                        finish();
+                    }
+
+                    break;
+                case RESULT_CANCELED:
+                    new AlertDialog.Builder(this)
+                            .setTitle("Enable Location Services")
+                            .setMessage( "You need to enable Location Services for better user user Experience." )
+                            .setPositiveButton( "Enable" , new
+                                    DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick (DialogInterface paramDialogInterface , int paramInt) {
+                                            locationSettingOption();
+                                        }
+                                    })
+                            .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    finish();
+                                }
+                            })
+                            .show() ;
+                    Log.d(TAG, "onActivityResult: RESULT_CANCELED");
+                    break;
+                default:
+                    super.onActivityResult(requestCode, resultCode, data);
+            }
         }
     }
 

@@ -14,6 +14,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -86,7 +87,6 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final String TAG = "HomeActivity";
     private static final int STARTLOCATION_REQUEST_CODE = 0;
     private static final int DESTINATIONLOCATION_REQUEST_CODE = 1;
-    private static final int LOCATION_SETTINGS_REQUEST_CODE = 666;
 
     private ActivityHomeBinding binding;
 
@@ -113,7 +113,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Marker startMarker, destinationMArker;
     private List<LatLng> polylineLatLngList;
 
-    private Marker bus01, bus02;
+    private Marker bus01, bus02;//temporary marked used in putMarked method
     HashMap<String, GeoLocation> busList = new HashMap<>();
     HashMap<String, Marker> markerList = new HashMap<>();
 
@@ -172,14 +172,9 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-
-        checklocationsetting(HomeActivity.this);
         //======================================================= maps =======================================================
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-        //fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-        //createLocationRequest();
 
         locationCallback = new LocationCallback() {
             @Override
@@ -188,14 +183,11 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                     return;
                 }
                 for (Location location : locationResult.getLocations()) {
-                    //moveCamera(location,"locationcallback onLocationResult");
-                    getNearbyBuses(location);
+                    Log.d(TAG, "Location Updated. ");
+                    mLastLocation = location;
                 }
             }
         };
-
-
-        //Teliver.startTracking(new TrackingBuilder(new MarkerOption("bus01")).build());
 
 
     }//end of onCreate
@@ -203,12 +195,18 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap googleMap) {
         Log.d(TAG, "onMapReady: called");
-        mMap = googleMap;
 
+        //LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        //if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)){ }
+
+        mMap = googleMap;
         mMap.setMyLocationEnabled(true);
         mMap.moveCamera(CameraUpdateFactory.zoomTo(DEFAULT_ZOOM));
         mMap.getUiSettings().setMapToolbarEnabled(false);
-        mMap.getUiSettings().setMyLocationButtonEnabled(true);
+        mMap.getUiSettings().setMyLocationButtonEnabled(false);
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        getLastLocation(fusedLocationClient);
 
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
@@ -231,12 +229,13 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
             case STARTLOCATION_REQUEST_CODE:
                 switch (resultCode) {
                     case RESULT_OK:
                         place = Autocomplete.getPlaceFromIntent(data);
+
+                        binding.homeAppbar.marker2.setImageResource(R.drawable.dot_selected_black);
                         binding.homeAppbar.searchStartLocation.setText(place.getName());
 
                         if (startMarker == null) {
@@ -248,8 +247,6 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                         } else {
                             startMarker.setPosition(place.getLatLng());
                         }
-
-
                         moveCamera(place.getLatLng(), "onActivityResult");
 
                         Log.i(TAG, "Place: " + place.getName() + ", " + place.getId() + " markerid=" + startMarker.getId());
@@ -274,14 +271,13 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                             destinationMArker = mMap.addMarker(new MarkerOptions()
                                     .position(place.getLatLng())
                                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
-                                    .title(place.getId()));
+                                    .title("Destination"));
                         } else {
                             destinationMArker.setPosition(place.getLatLng());
                         }
 
                         moveCamera(place.getLatLng(), "onActivityResult");
-
-                        getDirectionResponse(startMarker, destinationMArker);
+                        getNearbyBuses(startMarker==null?new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude()):startMarker.getPosition());
 
                         Log.i(TAG, "Place: " + place.getId() + ", " + place.getLatLng());
                         break;
@@ -294,15 +290,9 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                         Log.d(TAG, "onActivityResult: user cancled.");
                         break;
                 }
-
                 break;
-            case LOCATION_SETTINGS_REQUEST_CODE:
-                Log.d(TAG, "onActivityResult: case:LOCATION_SETTINGS_REQUEST_CODE");
-                if(resultCode==RESULT_OK){
-                    getLastLocation(fusedLocationClient);
-                }
-                Log.d(TAG, "onActivityResult: result code:"+resultCode);
-                break;
+            default:
+                super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
@@ -314,7 +304,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 break;
             case R.id.logout:
                 firebaseAuth.signOut();
-                startActivity(new Intent(this,LoginActivity.class));finish();
+                startActivity(new Intent(this, LoginActivity.class));
+                finish();
                 Toast.makeText(this, "navigation  logout item slelected", Toast.LENGTH_SHORT).show();
                 break;
             case R.id.ex_1:
@@ -329,14 +320,12 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         return true;
     }
 
-
-
-    private void getNearbyBuses(Location location) {
+    private void getNearbyBuses(LatLng latLng) {
         DatabaseReference reference = FirebaseDatabase.getInstance().getReference("availableBuses");
         GeoFire geoFire = new GeoFire(reference);
 
         //todo remove geoQuery listener when done.
-        GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(location.getLatitude(), location.getLongitude()), 2);
+        GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(latLng.latitude, latLng.longitude), 2);
 
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
             @Override
@@ -424,44 +413,6 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    private void putMarker(HashMap<String, GeoLocation> list) {
-
-        for (Map.Entry mp : list.entrySet()) {
-            switch (mp.getKey().toString()) {
-                case "bus01":
-                    GeoLocation location = list.get("bus01");
-                    if (bus01 == null) {
-                        Log.d(TAG, "putMarker: bus01 added");
-                        bus01 = mMap.addMarker(new MarkerOptions()
-                                .position(new LatLng(location.latitude, location.longitude))
-                                .draggable(true)
-                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
-                                .title("buo01"));
-                    } else {
-                        Log.d(TAG, "putMarker: bus01 location updated");
-                        bus01.setPosition(new LatLng(location.latitude, location.longitude));
-                    }
-                    break;
-                case "bus02":
-                    GeoLocation location1 = list.get("bus02");
-                    if (bus02 == null) {
-                        Log.d(TAG, "putMarker: bus01 added");
-                        bus02 = mMap.addMarker(new MarkerOptions()
-                                .position(new LatLng(location1.latitude, location1.longitude))
-                                .draggable(true)
-                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
-                                .title("buo01"));
-                    } else {
-                        Log.d(TAG, "putMarker: bus01 location updated");
-                        bus02.setPosition(new LatLng(location1.latitude, location1.longitude));
-                    }
-                    break;
-            }
-        }
-
-
-    }
-
     private void getLastLocation(FusedLocationProviderClient flpc) {
         Log.d(TAG, "getLastLocation: called");
         flpc.getLastLocation()
@@ -470,58 +421,32 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                     public void onSuccess(Location location) {
                         if (location == null) {
                             //todo handle location object when it is null
-                            Log.d(TAG, "onSuccess: location is null");
-                        }else {
+                        } else {
                             mLastLocation = location;
                             moveCamera(location, "getLastLocation");
-                            startLocationUpdates(locationRequest);
+
+                            binding.homeAppbar.marker2.setImageResource(R.drawable.dot_selected_blue);
+                            binding.homeAppbar.searchStartLocation.setText("Your Location");
+
+                            startLocationUpdates(createLocationRequest());
                         }
                     }
                 })
-        .addOnFailureListener(this, new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.d(TAG, "onFailure: error="+e.getMessage());
-            }
-        });
+                .addOnFailureListener(this, new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d(TAG, "onFailure: error=" + e.getMessage());
+                    }
+                });
     }
 
-    private void createLocationRequest() {
+    private LocationRequest createLocationRequest() {
         Log.d(TAG, "createLocationRequest: called");
         locationRequest = LocationRequest.create();
         locationRequest.setInterval(10000);
         locationRequest.setFastestInterval(5000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
-        builder.setAlwaysShow(true);
-        SettingsClient client = LocationServices.getSettingsClient(this);
-
-
-        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
-        task.addOnFailureListener(this, new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.d(TAG, "onFailure: called");
-                if (e instanceof ResolvableApiException) {
-                    try {
-                        ResolvableApiException resolvable = (ResolvableApiException) e;
-                        resolvable.startResolutionForResult(HomeActivity.this, LOCATION_SETTINGS_REQUEST_CODE);
-                    } catch (IntentSender.SendIntentException sendEx) {
-                        // Ignore the error
-                    }
-
-                }
-            }
-        });
-
-        task.addOnSuccessListener(this, new OnSuccessListener<LocationSettingsResponse>() {
-            @Override
-            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
-                Log.d(TAG, "onSuccess: called");
-                getLastLocation(fusedLocationClient);
-            }
-        });
+        return locationRequest;
     }
 
     private void startLocationUpdates(LocationRequest locationRequest) {
@@ -587,7 +512,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.d(TAG, "getDirectionResponse: error" + E.getMessage());
             }
         } else {
-            Log.d(TAG, "getDirectionResponse: something wet wrong");
+            Toast.makeText(this, "something went wrong", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "getDirectionResponse: something went wrong");
         }
     }
 
@@ -644,9 +570,42 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         geoQuery.removeAllListeners();
     }
 
-    private void checklocationsetting(Context context) {
+    private void putMarker(HashMap<String, GeoLocation> list) {
+
+        for (Map.Entry mp : list.entrySet()) {
+            switch (mp.getKey().toString()) {
+                case "bus01":
+                    GeoLocation location = list.get("bus01");
+                    if (bus01 == null) {
+                        Log.d(TAG, "putMarker: bus01 added");
+                        bus01 = mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(location.latitude, location.longitude))
+                                .draggable(true)
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
+                                .title("buo01"));
+                    } else {
+                        Log.d(TAG, "putMarker: bus01 location updated");
+                        bus01.setPosition(new LatLng(location.latitude, location.longitude));
+                    }
+                    break;
+                case "bus02":
+                    GeoLocation location1 = list.get("bus02");
+                    if (bus02 == null) {
+                        Log.d(TAG, "putMarker: bus01 added");
+                        bus02 = mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(location1.latitude, location1.longitude))
+                                .draggable(true)
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_location))
+                                .title("buo01"));
+                    } else {
+                        Log.d(TAG, "putMarker: bus01 location updated");
+                        bus02.setPosition(new LatLng(location1.latitude, location1.longitude));
+                    }
+                    break;
+            }
+        }
+
+
     }
 
-
-
-}
+}//the End
