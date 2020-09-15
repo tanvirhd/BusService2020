@@ -7,4 +7,7 @@
     <string name="navigation_drawer_close">Close Navigation Drawer</string>
     <string name="title_activity_maps">Map</string>
     <string name="key">AIzaSyCdP8QSuapjIn5DZEfWXG5EH6EIiYb6uuY</string>
+    <string name="route1">Mohammadpur, Sankar, Jhigatola, City College,Bata Signal, Sahbag, Kolabagan, Dnammondi 32 bus Stop, Sankar, Jhigatola, City College,Bata Signal</string>
+    <string name="route2">Mohammadpur, Sankar, Jhigatola, City College,Bata Signal, Sahbag, Kolabagan, Dnammondi 32 bus Stop, Sankar, Jhigatola, City College,Bata Signal,Mohammadpur, Sankar, Jhigatola, City College,Bata Signal, Sahbag, Kolabagan, Dnammondi 32 bus Stop, Sankar, Jhigatola, City College,Bata Signal</string>
+    <string name="parcel">parcel</string>
 </resources>

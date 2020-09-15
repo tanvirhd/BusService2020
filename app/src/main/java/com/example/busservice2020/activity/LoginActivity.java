@@ -27,7 +27,7 @@ import com.example.busservice2020.model.UserModel;
 public class LoginActivity extends AppCompatActivity implements Fragment_Communication , F2F_Commuication {
     private static final String TAG="LoginActivity";
 
-    ActivityLoginBinding binding;
+    private ActivityLoginBinding binding;
     Toolbar toolbar;
 
     VerificationFragment verificationFragment;

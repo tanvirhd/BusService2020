@@ -8,12 +8,49 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:889414791883:android:302b500e50c97b210ca14e",
+        "android_client_info": {
+          "package_name": "com.example.BSDriverApp2020"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "889414791883-leis6g9fr5j9fl6n3bsb21b9a04l0360.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD01KP1hKLkPAhyN1eEcrgouOpXf-N6IAo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "889414791883-leis6g9fr5j9fl6n3bsb21b9a04l0360.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:889414791883:android:d1592e6c026768af0ca14e",
         "android_client_info": {
           "package_name": "com.example.busservice2020"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "889414791883-rldio7kpdebr869cst40j3tbiittnbcn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.busservice2020",
+            "certificate_hash": "f3bc0802e0df2bfc8d5ce4ccddfb1051dc523df7"
+          }
+        },
         {
           "client_id": "889414791883-24mq68cg4jipjt6rcpbthlream1hmi7f.apps.googleusercontent.com",
           "client_type": 1,

@@ -117,7 +117,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/search_startLocation" />
 
         <include
-            android:id="@+id/home_content"
+            android:id="@+id/mapcontainer"
             layout="@layout/content_home"
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -129,6 +129,32 @@
             app:layout_constraintTop_toBottomOf="@+id/search_destination_location" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:id="@+id/bottomsheet_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:behavior_peekHeight="150dp"
+        app:behavior_hideable="false"
+        android:background="@color/white"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+        <View
+            android:layout_width="30dp"
+            android:layout_height="3dp"
+            android:background="@color/ash"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="3dp"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rec_buslist"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            tools:listitem="@layout/layout_availablebus_list"/>
+
+
+    </LinearLayout>
 
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
