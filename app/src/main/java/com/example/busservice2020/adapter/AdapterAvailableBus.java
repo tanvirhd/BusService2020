@@ -43,6 +43,8 @@ public class AdapterAvailableBus extends RecyclerView.Adapter<AdapterAvailableBu
         final int pos=position;
         holder.busname.setText(busList.get(position).getCompanyname());
         holder.route.setText(busList.get(position).getRoute());
+        holder.rem_time_distance.setText(busList.get(pos).getRem_time_distance());
+
         holder.pickupRequest.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -54,7 +56,7 @@ public class AdapterAvailableBus extends RecyclerView.Adapter<AdapterAvailableBu
         holder.itemHolder.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                adapterCallback.onItemClickCallBAck();
+                adapterCallback.onItemClickCallBack(busList.get(pos).getBusid());
                 Log.d(TAG, "onClick: clicked");
             }
         });

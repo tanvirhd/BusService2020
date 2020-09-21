@@ -90,12 +90,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.google.maps.android.PolyUtil;
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.MultiFormatWriter;
-import com.google.zxing.WriterException;
-import com.google.zxing.common.BitMatrix;
-import com.journeyapps.barcodescanner.BarcodeEncoder;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -138,7 +132,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Place place;
     private Marker startMarker, destinationMarker;
     private String destinationPlaceName;
-    private  ViewmodelDirectionApi viewmodelDirectionApi;
+    private ViewmodelDirectionApi viewmodelDirectionApi;
 
     HashMap<String, GeoLocation> busList = new HashMap<>();
     HashMap<String, Marker> markerList = new HashMap<>();
@@ -218,9 +212,9 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         binding.homeAppbar.mapcontainer.iconCentermap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(markerList.size()==0){
-                    moveCamera(mLastLocation,"iconCentermap");
-                }else{
+                if (markerList.size() == 0) {
+                    moveCamera(mLastLocation, "iconCentermap");
+                } else {
                     fitMapForAllMArkers(markerList);
                 }
             }
@@ -254,7 +248,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         adapterAvailableBus = new AdapterAvailableBus(getApplicationContext(), nearbyBusList, this);
         binding.homeAppbar.recBuslist.setLayoutManager(new LinearLayoutManager(this));
         binding.homeAppbar.recBuslist.setAdapter(adapterAvailableBus);
-        
+
 
     }//end of onCreate
 
@@ -310,7 +304,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                             startMarker = mMap.addMarker(new MarkerOptions()
                                     .position(place.getLatLng())
                                     .draggable(true)
-                                    .icon(getBitmapDescriptor(getResources().getDrawable(R.drawable.ic_startmarker,null)))//BitmapDescriptorFactory.fromResource(R.drawable.ic_startmarker)
+                                    .icon(getBitmapDescriptor(getResources().getDrawable(R.drawable.ic_startmarker, null)))//BitmapDescriptorFactory.fromResource(R.drawable.ic_startmarker)
                                     .title(place.getName()));
                         } else {
                             startMarker.setPosition(place.getLatLng());
@@ -333,14 +327,14 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 switch (resultCode) {
                     case RESULT_OK:
                         place = Autocomplete.getPlaceFromIntent(data);
-                        destinationPlaceName=place.getName();
+                        destinationPlaceName = place.getName();
                         binding.homeAppbar.searchDestinationLocation.setText(place.getName());
 
                         if (destinationMarker == null) {
                             destinationMarker = mMap.addMarker(new MarkerOptions()
                                     .position(place.getLatLng())
                                     .draggable(true)
-                                    .icon(getBitmapDescriptor(getResources().getDrawable(R.drawable.ic_destinationmarker,null)))
+                                    .icon(getBitmapDescriptor(getResources().getDrawable(R.drawable.ic_destinationmarker, null)))
                                     .title("Destination:" + place.getName()));
                         } else {
                             destinationMarker.setPosition(place.getLatLng());
@@ -399,17 +393,14 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mainHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        //putMarker(busList);
-                        if (!isMapListIterating) {
-                            updateMarkerList(busList);
-                            nearbyBusIdList.clear();
-                            nearbyBusIdList.addAll(busList.keySet());
-                        }
+
+                        updateMarkerList(busList);
+                        nearbyBusIdList.clear();
+                        nearbyBusIdList.addAll(busList.keySet());
+
                         busList.clear();
                     }
                 });
-
-                //fitMapForAllMArkers(markerList);
 
             }
 
@@ -425,32 +416,32 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         //Log.d(TAG, "updateMarkerList: Caller Thread: " + Thread.currentThread().getName());
         //Log.d(TAG, "updateMarkerList: called with buslist of size:" + buslist.size() + " And markerlist of size:" + markerList.size());
 
-        if (!markerList.isEmpty()) { // if there is no marker then no need to iterate otherwise update marker list
-            isMapListIterating = true;
+        List<String> removeMarker = new ArrayList<>();
+        if (!markerList.isEmpty()) {  // if there is no marker then no need to iterate otherwise update marker list
             for (Map.Entry me : markerList.entrySet()) {
                 if (buslist.isEmpty()) {
-                    //Log.d(TAG, "updateMarkerList: (if) marker removed for key=" + me.getKey().toString());
-                    markerList.get(me.getKey()).remove(); //remove marker from map
-                    markerList.remove(me.getKey());  //remove marker from markerlist
+                    removeMarker.add((String) me.getKey());
                 } else {
                     if (!buslist.containsKey(me.getKey())) {
-                        //Log.d(TAG, "updateMarkerList: (else) marker removed for key=" + me.getKey().toString());
-                        markerList.get(me.getKey()).remove();
-                        markerList.remove(me.getKey());
+                        removeMarker.add((String) me.getKey());
                     }
                 }
             }
 
+            for (String key : removeMarker) {
+                markerList.get(key).remove();    //remove marker from map
+                markerList.remove(key);          //remove marker from markerlist
+            }
 
-            isMapListIterating = false;
         }
 
         if (!buslist.isEmpty()) {
             for (Map.Entry me : buslist.entrySet()) {
-                //Log.d(TAG, "updateMarkerList: inside loop. key=" + me.getKey().toString());
                 updateMarkerLocation(me.getKey().toString(), (GeoLocation) me.getValue());
             }
-            //Log.d(TAG, "updateMarkerList: loop finished.");
+        } else {
+            nearbyBusList.clear();
+            adapterAvailableBus.notifyDataSetChanged();
         }
     }
 
@@ -463,35 +454,36 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             Marker marker = mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(location.latitude, location.longitude))
                     .draggable(true)
-                    .icon(getBitmapDescriptor(getResources().getDrawable(R.drawable.ic_marker_bus,null)))
+                    .icon(getBitmapDescriptor(getResources().getDrawable(R.drawable.ic_marker_bus, null)))
                     .title(key));
             markerList.put(key, marker);
+
         } else {
             //Log.d(TAG, "updateMarkerLocation: repositioning marker:" + key);
             markerList.get(key).setPosition(new LatLng(location.latitude, location.longitude));
         }
 
         updateNearbybusList();
-       /* if(!isMapAlreadyCalled){
-            Log.d(TAG, "updateMarkerLocation: markerlist size================>"+markerList.size());
-            fitMapForAllMArkers(markerList);isMapAlreadyCalled=true;
-        }*/
     }
 
     private void updateNearbybusList() {
-        //Log.d(TAG, "onDataChange: nearbyBusList size(0):" + nearbyBusList.size());
+        Log.d(TAG, "onDataChange: nearbyBusList size:" + nearbyBusList.size() + "nearbyBusIDList size:" + nearbyBusIdList.size());
+
         registeredBuses.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 nearbyBusList.clear();
+                int position = 0;
                 for (DataSnapshot ds : dataSnapshot.getChildren()) {
-
-                    AvailableBus availableBus = ds.getValue(AvailableBus.class);
-                    if(nearbyBusIdList.contains(availableBus.getBusid()))
+                    AvailableBus availableBus = ds.getValue(AvailableBus.class); //basically i am gettting all registered buses and filtering out the nearby ones
+                    if (nearbyBusIdList.contains(availableBus.getBusid())) {
                         nearbyBusList.add(availableBus);
+                        markerList.get(availableBus.getBusid()).setTitle(availableBus.getCompanyname());
+                        getDistanceInformation(markerList.get(availableBus.getBusid()).getPosition(), mLastLocation, position);
+                        position++;
+                    }
+                    adapterAvailableBus.notifyDataSetChanged();
                 }
-                //Log.d(TAG, "onDataChange: nearbyBusList size(1):" + nearbyBusList.size());
-                adapterAvailableBus.notifyDataSetChanged();
             }
 
             @Override
@@ -501,39 +493,36 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
-    public void getDistanceInformation(LatLng destinationLatLang, Location OriginLocation){
+    public void getDistanceInformation(LatLng destinationLatLang, Location OriginLocation, final int position) {
+        try {
+            String lat2 = String.valueOf(destinationLatLang.latitude);
+            String long2 = String.valueOf(destinationLatLang.longitude);
 
-        Log.d(TAG, "getDistanceInformation: called from HomeActivity");
-        try{
-            String lat2= String.valueOf(destinationLatLang.latitude);
-            String long2= String.valueOf(destinationLatLang.longitude);
-
-            String lat1= String.valueOf(OriginLocation.getLatitude());
-            String long1= String.valueOf(OriginLocation.getLongitude());
+            String lat1 = String.valueOf(OriginLocation.getLatitude());
+            String long1 = String.valueOf(OriginLocation.getLongitude());
 
             Map<String, String> mapQuery = new HashMap<>();
             mapQuery.put("units", "imperial");
-            mapQuery.put("origins", lat1+","+long1);
-            mapQuery.put("destinations", lat2+","+long2);
-            mapQuery.put("key","AIzaSyCdP8QSuapjIn5DZEfWXG5EH6EIiYb6uuY");
+            mapQuery.put("origins", lat1 + "," + long1);
+            mapQuery.put("destinations", lat2 + "," + long2);
+            mapQuery.put("key", "AIzaSyCdP8QSuapjIn5DZEfWXG5EH6EIiYb6uuY");
 
             viewmodelDirectionApi.getDistanceResponse(mapQuery).observe(this, new Observer<DistanceResponse>() {
                 @Override
                 public void onChanged(DistanceResponse distanceResponse) {
-                    if(distanceResponse!=null){
+                    if (distanceResponse != null) {
+                        final Element element = distanceResponse.getRows().get(0).getElements().get(0);
+                        nearbyBusList.get(position).setRem_time_distance(element.getDuration().getText() + " . " + element.getDistance().getText());
+                        adapterAvailableBus.notifyDataSetChanged();
 
-                        Element element=distanceResponse.getRows().get(0).getElements().get(0);
-                        //binding.tvAwayMinutes.setText(element.getDuration().getText()+", ");
-                        //binding.tvAwayKilo.setText(element.getDistance().getText()+"");
-
-                        Log.d(TAG, "data paisi: "+element.getDuration().getText()+"   &   "+element.getDistance().getValue()+"");
-                    }else {
-                        Log.d(TAG, "data paisi:null");
+                        Log.d(TAG, "getDistanceResponse: " + element.getDuration().getText() + "   &   " + element.getDistance().getValue() + "");
+                    } else {
+                        Log.d(TAG, "getDistanceResponse: null");
                     }
                 }
             });
-        }catch (Exception e){
-            Log.d(TAG, "getDistanceInformation: exception:"+e.getMessage());
+        } catch (Exception e) {
+            Log.d(TAG, "getDistanceInformation: exception:" + e.getMessage());
         }
     }
 
@@ -627,8 +616,6 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-
-
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
@@ -661,7 +648,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 UserModel user = dataSnapshot.getValue(UserModel.class);
                 if (user != null) {
-                    username=user.getName();
+                    username = user.getName();
                     headerName.setText(user.getName());
                     Picasso.get().load(user.getImageURL()).into(headerPic);
                     //Glide.with(HomeActivity.this).load(user.getImageURL()).into(headerPic);
@@ -780,62 +767,62 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     }*/
 
     @Override
-    public void onItemClickCallBAck() {
-        Log.d(TAG, "onItemClickCallBAck: Called");
-
+    public void onItemClickCallBack(String busid) {
+         moveCamera(markerList.get(busid).getPosition(),"onItemClickCallBAck");
+         markerList.get(busid).showInfoWindow();
     }
 
     @Override
     public void onPickUpRequestCallBack(final String busid) {
-        final String userid=FirebaseAuth.getInstance().getCurrentUser().getUid();
-        dialog_pickuprequest=initPickupRequestDialog(HomeActivity.this);
-        qrcode=dialog_pickuprequest.findViewById(R.id.qrcode);
+        final String userid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        dialog_pickuprequest = initPickupRequestDialog(HomeActivity.this);
+        qrcode = dialog_pickuprequest.findViewById(R.id.qrcode);
 
         dialog_pickuprequest.findViewById(R.id.dialog_cancel_pickuprewuest).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                DatabaseReference reference=FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
+                DatabaseReference reference = FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
                 reference.removeEventListener(pickuprequestvalueEventListener);
 
                 reference.child("pickupstatus").setValue("pickupcanceled").addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
-                        callfornearbybus=true;
+                        callfornearbybus = true;
                         dialog_pickuprequest.dismiss();
                         Log.d(TAG, "onSuccess: status updated");
                     }
                 });
             }
         });
-        
-        DatabaseReference reference=FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
-        ModelPickupRequest pickupRequest=new ModelPickupRequest(userid,username,
-                mLastLocation.getLatitude()+"", mLastLocation.getLongitude()+"","pickmeup",
-                false,false);
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
+        ModelPickupRequest pickupRequest = new ModelPickupRequest(userid, username,
+                mLastLocation.getLatitude() + "", mLastLocation.getLongitude() + "", "pickmeup",
+                false, false);
         reference.setValue(pickupRequest).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                callfornearbybus=false;
-                pickuprequestvalueEventListener =startListeningForAcceptance(busid,userid);
+                callfornearbybus = false;
+                pickuprequestvalueEventListener = startListeningForAcceptance(busid, userid);
                 dialog_pickuprequest.show();
             }
         });
     }
 
-    private ValueEventListener startListeningForAcceptance(final String busid, final String userid){
-        final DatabaseReference pickuprequestRef=FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
-        ValueEventListener requestvalueEventListener=pickuprequestRef.addValueEventListener(new ValueEventListener() {
+    private ValueEventListener startListeningForAcceptance(final String busid, final String userid) {
+        final DatabaseReference pickuprequestRef = FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
+        ValueEventListener requestvalueEventListener = pickuprequestRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                ModelPickupRequest pickupRequest=snapshot.getValue(ModelPickupRequest.class);
-                if(pickupRequest.isIspickuprequestRejected()){
-                    stopListeningToPickupRequest(pickuprequestRef,busid,userid);
-                }else if (pickupRequest.isIsrequestAccepted()){
+                ModelPickupRequest pickupRequest = snapshot.getValue(ModelPickupRequest.class);
+                if (pickupRequest.isIspickuprequestRejected()) {
+                    stopListeningToPickupRequest(pickuprequestRef, busid, userid);
+                } else if (pickupRequest.isIsrequestAccepted()) {
 
-                    stopListeningToPickupRequest(pickuprequestRef,busid,userid,00);
-                    ModelParcel percel=new ModelParcel(new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude()),
-                            destinationMarker.getPosition(), userid,busid,destinationPlaceName);
-                    startActivity(new Intent(HomeActivity.this,StartRideActivity.class).putExtra(getString(R.string.parcel),percel));
+                    stopListeningToPickupRequest(pickuprequestRef, busid, userid, 00);
+                    ModelParcel percel = new ModelParcel(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()),
+                            destinationMarker.getPosition(), userid, busid, destinationPlaceName);
+                    startActivity(new Intent(HomeActivity.this, StartRideActivity.class).putExtra(getString(R.string.parcel), percel));
                     finish();
 
                     /*dialog_pickuprequest.findViewById(R.id.dialogphase1).setVisibility(View.GONE);
@@ -852,9 +839,9 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         return requestvalueEventListener;
     }
 
-    private void stopListeningToPickupRequest(DatabaseReference ref,String busid,String userid){
+    private void stopListeningToPickupRequest(DatabaseReference ref, String busid, String userid) {
         ref.removeEventListener(pickuprequestvalueEventListener);
-        callfornearbybus=true;
+        callfornearbybus = true;
         dialog_pickuprequest.dismiss();
 
         /*DatabaseReference reference=FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
@@ -867,7 +854,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         Toast.makeText(this, "Pickup Request Cancled", Toast.LENGTH_SHORT).show();
     }
 
-    private void stopListeningToPickupRequest(DatabaseReference ref,String busid,String userid,int nothing){
+    private void stopListeningToPickupRequest(DatabaseReference ref, String busid, String userid, int nothing) {
         ref.removeEventListener(pickuprequestvalueEventListener);
         /*DatabaseReference reference=FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
         reference.removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -897,16 +884,16 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         return BitmapDescriptorFactory.fromBitmap(bm);
     }
 
-    private void showDestinationAdjustNote(){
+    private void showDestinationAdjustNote() {
         //todo note not showing.
-            moveCamera(destinationMarker.getPosition(),"iconDestination");
-            binding.homeAppbar.mapcontainer.destnationAdjustNote.setVisibility(View.VISIBLE);
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    binding.homeAppbar.mapcontainer.destnationAdjustNote.setVisibility(View.GONE);
-                }
-            }, 4000);
+        moveCamera(destinationMarker.getPosition(), "iconDestination");
+        binding.homeAppbar.mapcontainer.destnationAdjustNote.setVisibility(View.VISIBLE);
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                binding.homeAppbar.mapcontainer.destnationAdjustNote.setVisibility(View.GONE);
+            }
+        }, 4000);
 
     }
 
