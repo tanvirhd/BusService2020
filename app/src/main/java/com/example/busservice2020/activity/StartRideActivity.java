@@ -12,7 +12,10 @@ import com.example.busservice2020.model.AvailableBus;
 import com.example.busservice2020.model.DirectionResponse;
 import com.example.busservice2020.model.ModelBus;
 import com.example.busservice2020.model.ModelParcel;
+import com.example.busservice2020.model.ModelPickupRequest;
 import com.example.busservice2020.model.OverviewPolyline;
+import com.example.busservice2020.model_distancematrix.DistanceResponse;
+import com.example.busservice2020.model_distancematrix.Element;
 import com.example.busservice2020.viewmodel.ViewmodelDirectionApi;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -27,6 +30,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -40,10 +44,14 @@ import com.google.zxing.common.BitMatrix;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 
 import android.Manifest;
+import android.app.Activity;
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
@@ -51,11 +59,16 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class StartRideActivity extends AppCompatActivity implements OnMapReadyCallback {
     private static final String TAG = "StartRideActivity";
@@ -71,6 +84,10 @@ public class StartRideActivity extends AppCompatActivity implements OnMapReadyCa
     private List<LatLng> polylineLatLngList;
     private Polyline polyline;
 
+    private Dialog dialog_cancelpickup;
+    private DatabaseReference pickuprequestRef;
+    private ValueEventListener ListentoPickuprequest;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,9 +96,46 @@ public class StartRideActivity extends AppCompatActivity implements OnMapReadyCa
         setContentView(binding.getRoot());
 
         viewmodelDirectionApi = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(ViewmodelDirectionApi.class);
+        pickuprequestRef=FirebaseDatabase.getInstance().getReference("pickuprequest");
+
+
         parcel = getIntent().getParcelableExtra(getResources().getString(R.string.parcel));
         busRef = FirebaseDatabase.getInstance().getReference("availableBuses").child(parcel.getBusId()).child("l");
         businfoRef=FirebaseDatabase.getInstance().getReference("registeredbuses").child(parcel.getBusId());
+
+        setSupportActionBar(binding.toolbar);
+        getSupportActionBar().setTitle("Waiting For Bus");
+        binding.toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBackPressed();
+            }
+        });
+
+        dialog_cancelpickup=initExitDialog(this);
+        dialog_cancelpickup.findViewById(R.id.click_yes).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                busRef.removeEventListener(buslocationListener);
+                pickuprequestRef.child(parcel.getBusId()).child(parcel.getUserId()).child("pickupstatus").setValue("pickupcanceled").addOnSuccessListener(StartRideActivity.this, new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d(TAG, "onSuccess: pickupstatus updated");
+                    }
+                });
+                startActivity(new Intent(StartRideActivity.this,HomeActivity.class));
+                finish();
+            }
+        });
+
+        dialog_cancelpickup.findViewById(R.id.click_no).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog_cancelpickup.dismiss();
+            }
+        });
+
+
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map_startride_activity);
         mapFragment.getMapAsync(this);
@@ -107,6 +161,12 @@ public class StartRideActivity extends AppCompatActivity implements OnMapReadyCa
             @Override
             public void onClick(View v) {
                 busRef.removeEventListener(buslocationListener);
+                pickuprequestRef.child(parcel.getBusId()).child(parcel.getUserId()).child("pickupstatus").setValue("pickupcanceled").addOnSuccessListener(StartRideActivity.this, new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d(TAG, "onSuccess: pickupstatus updated");
+                    }
+                });
                 startActivity(new Intent(StartRideActivity.this,HomeActivity.class));
                 finish();
             }
@@ -172,19 +232,38 @@ public class StartRideActivity extends AppCompatActivity implements OnMapReadyCa
 
                     if (busmarker != null) {
                         busmarker.setPosition(buslatlng);
-                        getDirectionResponse(busmarker,startmarker);
+                        //getDirectionResponse(busmarker,startmarker);
+                        getDistanceInformation(busmarker.getPosition(),startmarker.getPosition());
                     } else {
                         busmarker = mMap.addMarker(new MarkerOptions()
                                 .position(buslatlng)
                                 .icon(getBitmapDescriptor(getResources().getDrawable(R.drawable.ic_marker_bus, null)))
                                 .title("bus"));
-                        getDirectionResponse(busmarker,startmarker);
+                        //getDirectionResponse(busmarker,startmarker);
+                        getDistanceInformation(busmarker.getPosition(),startmarker.getPosition());
                     }
 
                     fitMapForAllMArkers(startmarker,busmarker);startmarker.showInfoWindow();
 
                 } else {
                     Toast.makeText(StartRideActivity.this, "Something went wrong", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
+        ListentoPickuprequest=pickuprequestRef.child(parcel.getBusId()).child(parcel.getUserId()).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if(snapshot.exists()){
+                    ModelPickupRequest pickupRequest=snapshot.getValue(ModelPickupRequest.class);
+                    if(pickupRequest.getPickupstatus().equals("riding")){
+                       closeAllAndStartRide();
+                    }
                 }
             }
 
@@ -202,8 +281,22 @@ public class StartRideActivity extends AppCompatActivity implements OnMapReadyCa
             }
         }, 4000);*/
 
+    }//end of onMapReady
+
+    private void closeAllAndStartRide(){
+        pickuprequestRef.removeEventListener(ListentoPickuprequest);
+        busRef.removeEventListener(buslocationListener);
+
+        startActivity(new Intent(StartRideActivity.this,RideActivity.class).putExtra(getString(R.string.parcel),parcel));
+        finish();
+
+        Toast.makeText(this, "Start Riding", Toast.LENGTH_SHORT).show();
     }
 
+    @Override
+    public void onBackPressed() {
+       dialog_cancelpickup.show();
+    }
 
     private void fitMapForAllMArkers(Marker s, Marker b) {
         LatLngBounds.Builder latlangBoundBuilder = new LatLngBounds.Builder();
@@ -240,6 +333,41 @@ public class StartRideActivity extends AppCompatActivity implements OnMapReadyCa
     public void moveCamera(LatLng latLng, String caller) {
         Log.d(TAG, "moveCamera: called by " + caller);
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, DEFAULT_ZOOM));
+    }
+
+    public void getDistanceInformation(LatLng destinationLatLang, LatLng OriginLatLang){
+        final Element[] element = new Element[1];
+        Log.d(TAG, "getDistanceInformation: called from HomeActivity");
+        try{
+            String lat2= String.valueOf(destinationLatLang.latitude);
+            String long2= String.valueOf(destinationLatLang.longitude);
+
+            String lat1= String.valueOf(OriginLatLang.latitude);
+            String long1= String.valueOf(OriginLatLang.longitude);
+
+            Map<String, String> mapQuery = new HashMap<>();
+            mapQuery.put("units", "imperial");
+            mapQuery.put("origins", lat1+","+long1);
+            mapQuery.put("destinations", lat2+","+long2);
+            mapQuery.put("key","AIzaSyCdP8QSuapjIn5DZEfWXG5EH6EIiYb6uuY");
+
+            viewmodelDirectionApi.getDistanceResponse(mapQuery).observe(this, new Observer<DistanceResponse>() {
+                @Override
+                public void onChanged(DistanceResponse distanceResponse) {
+                    if(distanceResponse!=null){
+                        element[0] =distanceResponse.getRows().get(0).getElements().get(0);
+                        binding.tvAwayMinutes.setText(element[0].getDuration().getText()+", ");
+                        binding.tvAwayKilo.setText(element[0].getDistance().getText()+"");
+
+                        Log.d(TAG, "data paisi: "+ element[0].getDuration().getText()+"   &   "+ element[0].getDistance().getValue()+"");
+                    }else {
+                        Log.d(TAG, "data paisi:null");
+                    }
+                }
+            });
+        }catch (Exception e){
+            Log.d(TAG, "getDistanceInformation: exception:"+e.getMessage());
+        }
     }
 
     private void getDirectionResponse(Marker origin, Marker destination) {
@@ -301,5 +429,13 @@ public class StartRideActivity extends AppCompatActivity implements OnMapReadyCa
         } catch (WriterException e) {
             e.printStackTrace();
         }
+    }
+
+    private Dialog initExitDialog(Activity activity) {
+
+        Dialog dialog = new Dialog(activity);
+        dialog.setContentView(R.layout.dialog_cancelpickup);
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        return dialog;
     }
 }

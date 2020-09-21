@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.busservice2020.model.DirectionResponse;
+import com.example.busservice2020.model_distancematrix.DistanceResponse;
 import com.example.busservice2020.retrofit.ApiClient;
 import com.example.busservice2020.retrofit.ApiInterface;
 
@@ -41,6 +42,26 @@ public class RepositoryDirectionApi {
                     }
                 });
         return  response;
+    }
+
+
+    public LiveData<DistanceResponse>getDistanceResponse(@QueryMap Map<String, String> parameters){
+        final MutableLiveData<DistanceResponse> response=new MutableLiveData<>();
+        apiRequest.getDistanceInfo(parameters).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<DistanceResponse>() {
+                    @Override
+                    public void accept(DistanceResponse distanceResponse) throws Exception {
+                        response.postValue(distanceResponse);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        Log.d(TAG, "getDistanceResponse: error:"+throwable.getMessage());
+                    }
+                });
+
+        return response;
     }
 
 }

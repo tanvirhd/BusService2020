@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
 import com.example.busservice2020.model.DirectionResponse;
+import com.example.busservice2020.model_distancematrix.DistanceResponse;
 import com.example.busservice2020.repository.RepositoryDirectionApi;
 
 import java.util.Map;
@@ -24,5 +25,9 @@ public class ViewmodelDirectionApi extends AndroidViewModel {
 
     public LiveData<DirectionResponse> getDirectionResponse(@QueryMap Map<String, String> parameters){
         return repositoryDirectionApi.getDirectionResponse(parameters);
+    }
+
+    public LiveData<DistanceResponse>getDistanceResponse(@QueryMap Map<String, String> parameters ){
+        return repositoryDirectionApi.getDistanceResponse(parameters);
     }
 }

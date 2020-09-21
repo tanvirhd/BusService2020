@@ -3,13 +3,15 @@ package com.example.busservice2020.model;
 public class ModelPickupRequest {
     String userid,username;
     String lat,lang;
+    String pickupstatus;
     boolean isrequestAccepted,ispickuprequestRejected;
 
-    public ModelPickupRequest(String userid, String username, String lat, String lang, boolean isrequestAccepted, boolean ispickuprequestRejected) {
+    public ModelPickupRequest(String userid, String username, String lat, String lang, String pickupstatus, boolean isrequestAccepted, boolean ispickuprequestRejected) {
         this.userid = userid;
         this.username = username;
         this.lat = lat;
         this.lang = lang;
+        this.pickupstatus = pickupstatus;
         this.isrequestAccepted = isrequestAccepted;
         this.ispickuprequestRejected = ispickuprequestRejected;
     }
@@ -63,5 +65,13 @@ public class ModelPickupRequest {
 
     public void setIspickuprequestRejected(boolean ispickuprequestRejected) {
         this.ispickuprequestRejected = ispickuprequestRejected;
+    }
+
+    public String getPickupstatus() {
+        return pickupstatus;
+    }
+
+    public void setPickupstatus(String pickupstatus) {
+        this.pickupstatus = pickupstatus;
     }
 }

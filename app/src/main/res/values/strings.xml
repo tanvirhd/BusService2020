@@ -10,4 +10,6 @@
     <string name="route1">Mohammadpur, Sankar, Jhigatola, City College,Bata Signal, Sahbag, Kolabagan, Dnammondi 32 bus Stop, Sankar, Jhigatola, City College,Bata Signal</string>
     <string name="route2">Mohammadpur, Sankar, Jhigatola, City College,Bata Signal, Sahbag, Kolabagan, Dnammondi 32 bus Stop, Sankar, Jhigatola, City College,Bata Signal,Mohammadpur, Sankar, Jhigatola, City College,Bata Signal, Sahbag, Kolabagan, Dnammondi 32 bus Stop, Sankar, Jhigatola, City College,Bata Signal</string>
     <string name="parcel">parcel</string>
+
+    <string name="sharedPref_key">kkkeeeyyy</string>
 </resources>

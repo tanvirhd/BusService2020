@@ -3,6 +3,7 @@ package com.example.busservice2020.fragment;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 
@@ -25,6 +26,7 @@ import com.example.busservice2020.activity.HomeActivity;
 import com.example.busservice2020.databinding.FragmentLoginBinding;
 import com.example.busservice2020.interfaces.F2F_Commuication;
 import com.example.busservice2020.interfaces.Fragment_Communication;
+import com.example.busservice2020.model.UserModel;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskExecutors;
@@ -248,10 +250,14 @@ public class LoginFragment extends Fragment  {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Log.d(TAG, "@ "+dataSnapshot.getValue());
+
                 if(dataSnapshot.getValue()==null){
                     fragmentCommunication.callRegFragment("CallRegFrag");
                     Log.d(TAG, "onDataChange: New User");
                 }else{
+                    UserModel userModel=dataSnapshot.getValue(UserModel.class);
+                    //saveCurrentUserName(userModel.getName());
+                    //Log.d(TAG, "onDataChange: ==========================>"+userModel.getName());
                     startActivity(new Intent(getActivity(), HomeActivity.class));getActivity().finish();
                     Log.d(TAG, "onDataChange: Registered User");
                 }
@@ -264,5 +270,12 @@ public class LoginFragment extends Fragment  {
         });
 
         Log.d(TAG, "checkUserStatus: uid="+uid);
+    }
+
+    private void saveCurrentUserName(String name){
+        SharedPreferences sharedPref=getContext().getSharedPreferences(getString(R.string.sharedPref_key),Context.MODE_PRIVATE);
+        SharedPreferences.Editor edit=sharedPref.edit();
+        edit.putString("name",name);
+        edit.commit();
     }
 }

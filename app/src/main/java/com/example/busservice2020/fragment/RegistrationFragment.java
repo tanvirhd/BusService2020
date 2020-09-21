@@ -3,6 +3,7 @@ package com.example.busservice2020.fragment;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -129,7 +130,7 @@ public class RegistrationFragment extends Fragment {
         Log.d(TAG,"uploadUserInformation Called");
         Log.d(TAG,"=> "+ user.getImageURL());
         mRef.child(mAuth.getUid()).setValue(user);
-
+        saveCurrentUserName(user.getName());
         startActivity(new Intent(getActivity(), HomeActivity.class));getActivity().finish();
     }
 
@@ -165,5 +166,10 @@ public class RegistrationFragment extends Fragment {
         }
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
-
+    private void saveCurrentUserName(String name){
+        SharedPreferences sharedPref=getContext().getSharedPreferences(getString(R.string.sharedPref_key),Context.MODE_PRIVATE);
+        SharedPreferences.Editor edit=sharedPref.edit();
+        edit.putString("name",name);
+        edit.commit();
+    }
 }

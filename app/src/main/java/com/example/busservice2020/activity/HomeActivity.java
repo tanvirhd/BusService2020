@@ -16,6 +16,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -46,6 +47,8 @@ import com.example.busservice2020.model.ModelParcel;
 import com.example.busservice2020.model.ModelPickupRequest;
 import com.example.busservice2020.model.OverviewPolyline;
 import com.example.busservice2020.model.UserModel;
+import com.example.busservice2020.model_distancematrix.DistanceResponse;
+import com.example.busservice2020.model_distancematrix.Element;
 import com.example.busservice2020.viewmodel.ViewmodelDirectionApi;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
@@ -101,7 +104,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 //todo drow polyline from start to destination location has some issues.must recheck.
 public class HomeActivity extends AppCompatActivity implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener,
         AdapterCallback {
@@ -111,6 +113,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final int DESTINATIONLOCATION_REQUEST_CODE = 1;
     private static boolean callfornearbybus = false;
     private ActivityHomeBinding binding;
+    private String username;
 
     private FirebaseAuth firebaseAuth;
     private FirebaseUser firebaseUser;
@@ -135,6 +138,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Place place;
     private Marker startMarker, destinationMarker;
     private String destinationPlaceName;
+    private  ViewmodelDirectionApi viewmodelDirectionApi;
 
     HashMap<String, GeoLocation> busList = new HashMap<>();
     HashMap<String, Marker> markerList = new HashMap<>();
@@ -158,6 +162,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        viewmodelDirectionApi = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(ViewmodelDirectionApi.class);
 
 
         toolbar = findViewById(R.id.home_toolbar);
@@ -496,6 +501,42 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
+    public void getDistanceInformation(LatLng destinationLatLang, Location OriginLocation){
+
+        Log.d(TAG, "getDistanceInformation: called from HomeActivity");
+        try{
+            String lat2= String.valueOf(destinationLatLang.latitude);
+            String long2= String.valueOf(destinationLatLang.longitude);
+
+            String lat1= String.valueOf(OriginLocation.getLatitude());
+            String long1= String.valueOf(OriginLocation.getLongitude());
+
+            Map<String, String> mapQuery = new HashMap<>();
+            mapQuery.put("units", "imperial");
+            mapQuery.put("origins", lat1+","+long1);
+            mapQuery.put("destinations", lat2+","+long2);
+            mapQuery.put("key","AIzaSyCdP8QSuapjIn5DZEfWXG5EH6EIiYb6uuY");
+
+            viewmodelDirectionApi.getDistanceResponse(mapQuery).observe(this, new Observer<DistanceResponse>() {
+                @Override
+                public void onChanged(DistanceResponse distanceResponse) {
+                    if(distanceResponse!=null){
+
+                        Element element=distanceResponse.getRows().get(0).getElements().get(0);
+                        //binding.tvAwayMinutes.setText(element.getDuration().getText()+", ");
+                        //binding.tvAwayKilo.setText(element.getDistance().getText()+"");
+
+                        Log.d(TAG, "data paisi: "+element.getDuration().getText()+"   &   "+element.getDistance().getValue()+"");
+                    }else {
+                        Log.d(TAG, "data paisi:null");
+                    }
+                }
+            });
+        }catch (Exception e){
+            Log.d(TAG, "getDistanceInformation: exception:"+e.getMessage());
+        }
+    }
+
     /*private void getLastLocation(FusedLocationProviderClient flpc) {
         Log.d(TAG, "getLastLocation: called");
         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
@@ -596,6 +637,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 break;
             case R.id.logout:
                 firebaseAuth.signOut();
+                updateCurrentUserName();
                 startActivity(new Intent(this, LoginActivity.class));
                 finish();
                 Toast.makeText(this, "navigation  logout item slelected", Toast.LENGTH_SHORT).show();
@@ -619,6 +661,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 UserModel user = dataSnapshot.getValue(UserModel.class);
                 if (user != null) {
+                    username=user.getName();
                     headerName.setText(user.getName());
                     Picasso.get().load(user.getImageURL()).into(headerPic);
                     //Glide.with(HomeActivity.this).load(user.getImageURL()).into(headerPic);
@@ -753,20 +796,21 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onClick(View v) {
                 DatabaseReference reference=FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
                 reference.removeEventListener(pickuprequestvalueEventListener);
-                reference.removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
+
+                reference.child("pickupstatus").setValue("pickupcanceled").addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
                         callfornearbybus=true;
                         dialog_pickuprequest.dismiss();
-                        Log.d(TAG, "onSuccess: remove pickup request successfull");
+                        Log.d(TAG, "onSuccess: status updated");
                     }
                 });
             }
         });
         
         DatabaseReference reference=FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
-        ModelPickupRequest pickupRequest=new ModelPickupRequest(userid,"ABC",//todo change ABC to User name
-                mLastLocation.getLatitude()+"", mLastLocation.getLongitude()+"",
+        ModelPickupRequest pickupRequest=new ModelPickupRequest(userid,username,
+                mLastLocation.getLatitude()+"", mLastLocation.getLongitude()+"","pickmeup",
                 false,false);
         reference.setValue(pickupRequest).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
@@ -808,32 +852,30 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         return requestvalueEventListener;
     }
 
-
-
     private void stopListeningToPickupRequest(DatabaseReference ref,String busid,String userid){
         ref.removeEventListener(pickuprequestvalueEventListener);
         callfornearbybus=true;
         dialog_pickuprequest.dismiss();
 
-        DatabaseReference reference=FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
+        /*DatabaseReference reference=FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
         reference.removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
                 Log.d(TAG, "onSuccess: remove pickup request successfull0");
             }
-        });
+        });*/
         Toast.makeText(this, "Pickup Request Cancled", Toast.LENGTH_SHORT).show();
     }
 
     private void stopListeningToPickupRequest(DatabaseReference ref,String busid,String userid,int nothing){
         ref.removeEventListener(pickuprequestvalueEventListener);
-        DatabaseReference reference=FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
+        /*DatabaseReference reference=FirebaseDatabase.getInstance().getReference("pickuprequest").child(busid).child(userid);
         reference.removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
                 Log.d(TAG, "onSuccess: pickup request accepted successfull1");
             }
-        });
+        });*/
         Toast.makeText(this, "Pickup Request Accepted", Toast.LENGTH_SHORT).show();
     }
 
@@ -866,6 +908,18 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }, 4000);
 
+    }
+
+    private void updateCurrentUserName() {
+        SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(getString(R.string.sharedPref_key), MODE_PRIVATE);
+        SharedPreferences.Editor edit = sharedPref.edit();
+        edit.putString("name", "");
+        edit.commit();
+    }
+
+    private String getCurrentUserName() {
+        SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(getString(R.string.sharedPref_key), MODE_PRIVATE);
+        return sharedPref.getString("name", "");
     }
 
     // Runable Classes

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -10,16 +9,19 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"/>
+            android:layout_height="?attr/actionBarSize"
+            app:titleTextColor="@color/white" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize">
+
         <fragment
             android:id="@+id/map_startride_activity"
             android:name="com.google.android.gms.maps.SupportMapFragment"
@@ -29,6 +31,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
+
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
@@ -70,16 +73,15 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:behavior_peekHeight="80dp"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
+        android:background="@drawable/textbox_layout_whileblackborder"
         android:orientation="vertical"
         app:behavior_hideable="false"
-        android:background="@drawable/textbox_layout_whileblackborder"
+        app:behavior_peekHeight="80dp"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
 
@@ -180,8 +182,8 @@
                 android:layout_height="200dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"
-                android:scaleType="fitXY"
                 android:background="@drawable/textbox_square_black"
+                android:scaleType="fitXY"
                 app:layout_constraintBottom_toTopOf="@+id/tv_cancelpickup"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.037"
@@ -193,8 +195,8 @@
                 android:layout_width="0dp"
                 android:layout_height="50dp"
                 android:background="@color/red"
-                android:text="Cancel Pick-Up"
                 android:gravity="center"
+                android:text="Cancel Pick-Up"
                 android:textColor="@color/black"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
@@ -203,6 +205,5 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
-
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
