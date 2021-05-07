@@ -21,8 +21,12 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:replace="android:allowBackup">
-        <activity android:name=".activity.RideActivity"></activity>
-        <activity android:name=".activity.StartRideActivity"></activity>
+        <activity android:name=".activity.HistoryActivity"></activity>
+        <activity android:name=".activity.RideHistoryActivity" />
+        <activity android:name=".activity.ProfileActivity" />
+        <activity android:name=".activity.AboutUsActivity" />
+        <activity android:name=".activity.RideActivity" />
+        <activity android:name=".activity.StartRideActivity" />
         <activity android:name=".activity.SetDestinationActivity" />
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.

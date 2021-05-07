@@ -45,6 +45,7 @@ public class RepositoryDirectionApi {
     }
 
 
+    //todo check3
     public LiveData<DistanceResponse>getDistanceResponse(@QueryMap Map<String, String> parameters){
         final MutableLiveData<DistanceResponse> response=new MutableLiveData<>();
         apiRequest.getDistanceInfo(parameters).subscribeOn(Schedulers.io())

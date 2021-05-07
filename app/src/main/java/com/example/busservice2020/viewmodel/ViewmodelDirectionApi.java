@@ -27,6 +27,7 @@ public class ViewmodelDirectionApi extends AndroidViewModel {
         return repositoryDirectionApi.getDirectionResponse(parameters);
     }
 
+    //todo check2
     public LiveData<DistanceResponse>getDistanceResponse(@QueryMap Map<String, String> parameters ){
         return repositoryDirectionApi.getDistanceResponse(parameters);
     }

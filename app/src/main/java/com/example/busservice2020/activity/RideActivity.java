@@ -24,6 +24,7 @@ import android.widget.Toast;
 import com.example.busservice2020.R;
 import com.example.busservice2020.databinding.ActivityRideBinding;
 import com.example.busservice2020.model.DirectionResponse;
+import com.example.busservice2020.model.ModelHistory;
 import com.example.busservice2020.model.ModelParcel;
 import com.example.busservice2020.model.OverviewPolyline;
 import com.example.busservice2020.model_distancematrix.DistanceResponse;
@@ -41,6 +42,7 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -48,6 +50,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.maps.android.PolyUtil;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,11 +64,13 @@ public class RideActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleMap mMap;
     private Marker startmarker, destinationmarker, busmarker;
     private ValueEventListener buslocationListener;
-    private DatabaseReference busRef,businfoRef;
+    private DatabaseReference busRef,businfoRef,pickuprequestRef;
     private ViewmodelDirectionApi viewmodelDirectionApi;
     private List<LatLng> polylineLatLngList;
     private int distanseMeasure=0;
     private Dialog dialog_finish_ride;
+    private DatabaseReference historyRef;
+    public static  String RIDETIMEDATE;
 
 
 
@@ -72,9 +79,18 @@ public class RideActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         binding=ActivityRideBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        RIDETIMEDATE =getCurrentTime()+" "+getCurrentDate();
 
         setSupportActionBar(binding.toolbar);
         getSupportActionBar().setTitle("Riding");
+
+
+        parcel = getIntent().getParcelableExtra(getResources().getString(R.string.parcel));
+        historyRef=FirebaseDatabase.getInstance().getReference("history");
+        busRef = FirebaseDatabase.getInstance().getReference("availableBuses").child(parcel.getBusId()).child("l");
+        businfoRef=FirebaseDatabase.getInstance().getReference("registeredbuses").child(parcel.getBusId());
+        pickuprequestRef=FirebaseDatabase.getInstance().getReference("pickuprequest");
+        viewmodelDirectionApi = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(ViewmodelDirectionApi.class);
 
         dialog_finish_ride=initDialog(RideActivity.this);
         dialog_finish_ride.findViewById(R.id.finishRide).setOnClickListener(new View.OnClickListener() {
@@ -82,16 +98,19 @@ public class RideActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onClick(View v) {
                 dialog_finish_ride.dismiss();
                 busRef.removeEventListener(buslocationListener);
+                pickuprequestRef.child(parcel.getBusId()).child(parcel.getUserId()).child("pickupstatus").setValue("finished")
+                        .addOnSuccessListener(RideActivity.this, new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        new Thread(new UpdateHistory(historyRef,parcel,StartRideActivity.BUSNAME,StartRideActivity.BUSLICENSE,RideActivity.RIDETIMEDATE)).run();
+                    }
+                });
+
+
                 startActivity(new Intent(RideActivity.this,HomeActivity.class));
                 finish();
             }
         });
-
-
-        parcel = getIntent().getParcelableExtra(getResources().getString(R.string.parcel));
-        busRef = FirebaseDatabase.getInstance().getReference("availableBuses").child(parcel.getBusId()).child("l");
-        businfoRef=FirebaseDatabase.getInstance().getReference("registeredbuses").child(parcel.getBusId());
-        viewmodelDirectionApi = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(ViewmodelDirectionApi.class);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map_startride_activity);
         mapFragment.getMapAsync(this);
@@ -148,7 +167,7 @@ public class RideActivity extends AppCompatActivity implements OnMapReadyCallbac
                         getDistanceInformation(busmarker.getPosition(),destinationmarker.getPosition());
                     }
 
-                    if(distanseMeasure!=0 &&distanseMeasure<=200){
+                    if(distanseMeasure!=0 &&distanseMeasure<=500){
                         dialog_finish_ride.show();
                     }
 
@@ -277,4 +296,47 @@ public class RideActivity extends AppCompatActivity implements OnMapReadyCallbac
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         return dialog;
     }
+
+    private String getCurrentDate() {
+        Calendar calendar = Calendar.getInstance();
+        DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+        return dateFormat.format(calendar.getTime());
+    }
+
+    private String getCurrentTime() {
+        Calendar calendar = Calendar.getInstance();
+        DateFormat dateFormat = new SimpleDateFormat("hh:mm aa");
+        return dateFormat.format(calendar.getTime());
+    }
+
+
+    class UpdateHistory implements Runnable{
+        DatabaseReference ref;
+        ModelParcel parcel;
+        String busname,buslicense,timedate;
+
+        public UpdateHistory(DatabaseReference ref, ModelParcel parcel, String busname, String buslicense, String timedate) {
+            this.ref = ref;
+            this.parcel = parcel;
+            this.busname = busname;
+            this.buslicense = buslicense;
+            this.timedate = timedate;
+        }
+
+        @Override
+        public void run() {
+            String key=ref.push().getKey();
+            ModelHistory history=new ModelHistory(parcel.getStartlocation().latitude,parcel.getStartlocation().longitude,
+                    parcel.getUserId(),parcel.getDestinationPlaceName(),busname,timedate,buslicense);
+
+            ref.child(parcel.getUserId()).child(key).setValue(history).addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    Log.d("History Runable", "onSuccess: history added to db");
+                }
+            });
+
+        }
+    }
+
 }

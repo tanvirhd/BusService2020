@@ -88,6 +88,8 @@ public class StartRideActivity extends AppCompatActivity implements OnMapReadyCa
     private DatabaseReference pickuprequestRef;
     private ValueEventListener ListentoPickuprequest;
 
+    public static String BUSNAME,BUSLICENSE;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -177,6 +179,8 @@ public class StartRideActivity extends AppCompatActivity implements OnMapReadyCa
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if(snapshot.exists()){
                     ModelBus bus=snapshot.getValue(ModelBus.class);
+                    BUSNAME=bus.getCompanyname();
+                    BUSLICENSE=bus.getLicense();
                     binding.busname.setText(bus.getCompanyname());
                     binding.busLicence.setText(bus.getLicense());
                 }

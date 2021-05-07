@@ -14,6 +14,8 @@ import retrofit2.http.QueryMap;
 public interface ApiInterface {
     @POST("directions/json")
     Observable<DirectionResponse> getDirectionResponse(@QueryMap Map<String, String> parameters);
+
+    //todo check4
     @POST("distancematrix/json")
     Observable<DistanceResponse> getDistanceInfo(@QueryMap Map<String, String> parameters);
 }
